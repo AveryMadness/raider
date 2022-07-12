@@ -14,7 +14,8 @@ enum class CustomMode
     SPACE // Sets gravity like the moon // BUG: Unfortunately, the gravityscale variable doesn't update for the client, making them rubberband and making it look weird.
 };
 
-int CurrentTeam = 2;
+static int CurrentTeam = 2;
+std::map<EFortTeam, bool> teamsmap;
 
 constexpr CustomMode Mode = CustomMode::NONE;
 
@@ -31,6 +32,55 @@ namespace Hooks
     uint64 GetNetMode(UWorld* World) // PlayerController::SendClientAdjustment checks if the netmode is not client
     {
         return 2; // ENetMode::NM_ListenServer;
+    }
+
+    void* OnReloadHook(AFortWeapon* a1, int a2)
+    {
+        auto Pawn = (AFortPlayerPawnAthena*)a1->GetOwner();
+        auto PlayerController = (AFortPlayerControllerAthena*)Pawn->Controller;
+
+        bool Successful = true;
+
+        if (a1 && Successful)
+        {
+            auto AmmoDef = a1->WeaponData->GetAmmoWorldItemDefinition_BP();
+
+            if (!AmmoDef || a1->WeaponData->GetName().contains("TID"))
+                AmmoDef = a1->WeaponData;
+
+            auto Inventory = PlayerController->WorldInventory;
+
+            auto ReplicatedEntries = Inventory->Inventory.ReplicatedEntries;
+            auto ItemInstances = Inventory->Inventory.ItemInstances;
+
+            for (int i = 0; i < Inventory->Inventory.ReplicatedEntries.Num(); i++)
+            {
+                if (Inventory->Inventory.ReplicatedEntries[i].ItemDefinition == AmmoDef)
+                {
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= a2;
+                    Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
+
+                    if (Inventory->Inventory.ReplicatedEntries[i].Count <= 0)
+                    {
+                        Inventory->Inventory.ReplicatedEntries.RemoveSingle(i);
+
+                        for (int j = 0; j < ItemInstances.Num(); j++)
+                        {
+                            auto ItemInstance = ItemInstances[j];
+
+                            if (ItemInstance && ItemInstance->GetItemDefinitionBP() == AmmoDef)
+                            {
+                                ItemInstances.RemoveSingle(i);
+                            }
+                        }
+                    }
+
+                    Inventory::Update(PlayerController, 0, true);
+                }
+            }
+
+            Native::OnReload(a1, a2);
+        }
     }
 
     void TickFlush(UNetDriver* NetDriver, float DeltaSeconds)
@@ -61,6 +111,28 @@ namespace Hooks
         Native::World::NotifyControlMessage(GetWorld(), Connection, MessageType, Bunch);
     }
 
+
+    auto ApplyTeam()
+    {
+        if (true)
+        {
+            for (int i = 2; i < 104; i++)
+            {
+                teamsmap.insert_or_assign((EFortTeam)i, false);
+            }
+        }
+
+        for (auto team : teamsmap)
+        {
+            if (team.second)
+                continue;
+
+            teamsmap.insert_or_assign(team.first, true);
+
+            return team.first;
+        }
+    }
+
     APlayerController* SpawnPlayActor(UWorld* World, UPlayer* NewPlayer, ENetRole RemoteRole, FURL& URL, void* UniqueId, SDK::FString& Error, uint8 NetPlayerIndex)
     {
         auto PlayerController = (AFortPlayerControllerAthena*)Native::World::SpawnPlayActor(GetWorld(), NewPlayer, RemoteRole, URL, UniqueId, Error, NetPlayerIndex);
@@ -68,12 +140,24 @@ namespace Hooks
 
         auto PlayerState = (AFortPlayerStateAthena*)PlayerController->PlayerState;
 		
-		
+		FTransform LocationToSpawn;
+        if (!bStartedBus)
+            LocationToSpawn = GetPlayerStart(PlayerController);
+        else
+        {
+            TArray<AFortPlayerPawn*> OutActors;
+            GetFortKismet()->STATIC_GetAllFortPlayerPawns(GetWorld(), &OutActors);
+			auto PlayerPawn = OutActors[0];
+            LocationToSpawn.Translation = PlayerPawn->K2_GetActorLocation();
+            LocationToSpawn.Translation.Z += 100;
+            LocationToSpawn.Rotation = FQuat();
+			LocationToSpawn.Scale3D = FVector{1, 1, 1};
+        }
             
 
         InitInventory(PlayerController);
 
-        auto Pawn = (APlayerPawn_Athena_C*)SpawnActorTrans(APlayerPawn_Athena_C::StaticClass(), GetPlayerStart(PlayerController), PlayerController);
+        auto Pawn = (APlayerPawn_Athena_C*)SpawnActorTrans(APlayerPawn_Athena_C::StaticClass(), LocationToSpawn, PlayerController);
 
         PlayerController->Pawn = Pawn;
         PlayerController->AcknowledgedPawn = Pawn;
@@ -87,7 +171,6 @@ namespace Hooks
 
         Pawn->SetMaxHealth(Globals::MaxHealth);
         Pawn->SetMaxShield(Globals::MaxShield);
-        Pawn->HealthSet->CurrentShield.Minimum = 0.0f;
         if (!bStartedBus)
             Pawn->bCanBeDamaged = false;
 		
@@ -114,6 +197,16 @@ namespace Hooks
         PlayerController->bHasServerFinishedLoading = true;
         PlayerController->bHasInitiallySpawned = true;
         PlayerController->OnRep_bHasServerFinishedLoading();
+
+        Pawn->AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(Pawn->HealthRegenDelayGameplayEffect, Pawn->AbilitySystemComponent, 1);
+        Pawn->AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(Pawn->HealthRegenGameplayEffect, Pawn->AbilitySystemComponent, 1);
+        Pawn->AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(Pawn->ShieldRegenDelayGameplayEffect, Pawn->AbilitySystemComponent, 1);
+        Pawn->AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(Pawn->ShieldRegenGameplayEffect, Pawn->AbilitySystemComponent, 1);
+        // TODO: Check if this is useless.
+        Pawn->HealthRegenDelayGameplayEffect = nullptr;
+        Pawn->HealthRegenGameplayEffect = nullptr;
+        Pawn->ShieldRegenDelayGameplayEffect = nullptr;
+        Pawn->ShieldRegenGameplayEffect = nullptr;
 
         PlayerState->bHasFinishedLoading = true;
         PlayerState->bHasStartedPlaying = true;
@@ -147,7 +240,7 @@ namespace Hooks
         }
 
         static std::vector<UFortWeaponRangedItemDefinition*> doublePumpLoadout = {
-            FindWID("WID_Harvest_Pickaxe_Athena_C_T01") // Candy 
+            (UFortWeaponRangedItemDefinition*)Utils::GetRandomPickaxe() // Candy 
         };
 
 
@@ -159,20 +252,15 @@ namespace Hooks
       
 
         auto CheatManager = CreateCheatManager(PlayerController);
-        CheatManager->ToggleInfiniteAmmo();
         CheatManager->ToggleInfiniteDurability();
 
         if (PlayerController->Pawn)
         {
             if (PlayerController->Pawn->PlayerState)
             {
-                PlayerState->TeamIndex = EFortTeam(CurrentTeam); 
-                std::cout << "Joining Team:" << CurrentTeam << std::endl;
+                PlayerState->TeamIndex = EFortTeam(CurrentTeam);
                 CurrentTeam++;
-                std::cout << "Incrementing Current Team! New Team Number: " << CurrentTeam << std::endl;
                 PlayerState->OnRep_PlayerTeam();
-                PlayerState->SquadId = PlayerState->PlayerTeam->TeamMembers.Num() + 1;
-                PlayerState->OnRep_SquadId();
                 
             }
         }
@@ -183,16 +271,7 @@ namespace Hooks
 
         // Pawn->K2_TeleportTo({ 37713, -52942, 461 }, { 0, 0, 0 }); // Tilted
 
-        auto SpawnLoc = Pawn->K2_GetActorLocation();
-        FTransform SpawnTransform;
-        SpawnTransform.Rotation.X = Pawn->K2_GetActorRotation().Pitch;
-        SpawnTransform.Rotation.Y = Pawn->K2_GetActorRotation().Yaw;
-        SpawnTransform.Rotation.Z = Pawn->K2_GetActorRotation().Roll;
-        SpawnTransform.Translation = SpawnLoc;
-        SpawnTransform.Scale3D = FVector(1, 1, 1);
-        auto Drone = (ABP_VictoryDrone_C*)SpawnActorTrans(ABP_VictoryDrone_C::StaticClass(), SpawnTransform, PlayerController);
-        Drone->InitDrone();
-        Drone->TriggerPlayerSpawnEffects();
+        
 
         return PlayerController;
     }
@@ -269,6 +348,22 @@ namespace Hooks
         DetourAttachE(Native::OnlineSession::KickPlayer, KickPlayer);
         DetourAttachE(Native::GameViewportClient::PostRender, PostRender);
         DetourAttachE(Native::GC::CollectGarbage, CollectGarbage);
+        DetourAttachE(Native::OnReload, OnReloadHook);
+        DETOUR_END
+    }
+	
+    void DetachNetworkHooks()
+    {
+        DETOUR_START
+        DetourDetachE(Native::World::WelcomePlayer, WelcomePlayer);
+        DetourDetachE(Native::Actor::GetNetMode, GetNetMode);
+        DetourDetachE(Native::World::NotifyControlMessage, World_NotifyControlMessage);
+        DetourDetachE(Native::World::SpawnPlayActor, SpawnPlayActor);
+        DetourDetachE(Native::OnlineBeaconHost::NotifyControlMessage, Beacon_NotifyControlMessage);
+        DetourDetachE(Native::OnlineSession::KickPlayer, KickPlayer);
+        DetourDetachE(Native::GameViewportClient::PostRender, PostRender);
+        DetourDetachE(Native::GC::CollectGarbage, CollectGarbage);
+        DetourDetachE(Native::OnReload, OnReloadHook)
         DETOUR_END
     }
 
@@ -296,13 +391,7 @@ namespace Hooks
         return Pickup;
     }
 
-    bool GuidComp(FGuid guidA, FGuid guidB)
-    {
-        if (guidA.A == guidB.A && guidA.B == guidB.B && guidA.C == guidB.C && guidA.D == guidB.D)
-            return true;
-        else
-            return false;
-    }
+    
 
     void ProcessEventHook(UObject* Object, UFunction* Function, void* Parameters)
     {
@@ -328,6 +417,17 @@ namespace Hooks
                     SpawnPickup(Location, Utils::GetRandomAmmoItemDefinition());
                 }
             }
+			
+			if (ReceivingActor && ReceivingActor->Class->GetName().contains("VendingMachine"))
+            {
+              auto VendingMachine = (ABuildingItemCollectorActor*)ReceivingActor;
+              auto Location = ReceivingActor->K2_GetActorLocation();
+              VendingMachine->LootSpawnLocation = Location;
+              VendingMachine->ItemCollections[0].OutputItem = (UFortWorldItemDefinition*)Utils::GetRandomItemDefinition();
+              if (!VendingMachine->ItemCollections[0].OutputItem)
+                  std::cout << "No input item" << std::endl;
+              Hooks::SpawnPickup(VendingMachine->LootSpawnLocation, VendingMachine->ItemCollections[0].OutputItem);
+            }
 
             if (ReceivingActor && ReceivingActor->Class->GetName().contains("Tiered_Chest"))
             {
@@ -342,15 +442,15 @@ namespace Hooks
                 std::cout << "Location Set Successfully" << std::endl;
 
 				UFortWeaponItemDefinition* WeaponDef;
-                if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.59f))
+                if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.39f))
                 {
                     WeaponDef = Utils::GetRandomUncommonWeaponDefinition();
                 }
                 else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.35f))
                     WeaponDef = Utils::GetRandomRareWeaponDefinition();
-                else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.12f))
+                else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.22f))
                     WeaponDef = Utils::GetRandomEpicWeaponDefinition();
-                else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.5f))
+                else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.15f))
                     WeaponDef = Utils::GetRandomGoldWeaponDefinition();
                 else
                     WeaponDef = Utils::GetRandomCommonWeaponDefinition();
@@ -368,7 +468,6 @@ namespace Hooks
                     auto WeaponWid = (UFortWeaponItemDefinition*)WeaponDef;
                     auto ActorClass = (AFortWeapon*)WeaponWid->GetWeaponActorClass();
 
-                    Pickup->PrimaryPickupItemEntry.LoadedAmmo = ActorClass->GetBulletsPerClip();
                 }
                 if (Pickup)
                 {
@@ -405,7 +504,21 @@ namespace Hooks
         if (FuncName == "ServerHandlePickup")
         {
             
-        }		
+        }	
+
+        if (Function->GetName().find("Tick") != std::string::npos && bRestart)
+        {
+            bRestart = false;
+            bTraveled = false;
+            bPlayButton = false;
+            bListening = false;
+            bSpawnedFloorLoot = false;
+            bStartedBus = false;
+            HostBeacon = nullptr;
+            ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->bSafeZonePaused = false;
+            DetachNetworkHooks();
+            GetKismetSystem()->STATIC_ExecuteConsoleCommand(GetWorld(), L"open frontend", GetPlayerController());
+        }
 
         if (!bPlayButton)
         {
@@ -421,6 +534,7 @@ namespace Hooks
                 InitNetworkHooks();
                 printf("[InitNetworkHooks] Done\n");
             }
+            
         }
 
         if (bTraveled)

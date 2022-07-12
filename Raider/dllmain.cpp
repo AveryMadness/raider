@@ -8,8 +8,9 @@
 
 DWORD WINAPI Main(LPVOID lpParam)
 {
+    
     SetupConsole();
-
+    
     auto Start = std::chrono::steady_clock::now();
     Native::InitializeAll();
     auto End = std::chrono::steady_clock::now();
@@ -18,6 +19,13 @@ DWORD WINAPI Main(LPVOID lpParam)
 
     LOG_INFO("Welcome to Raider!");
     LOG_INFO("Initializing hooks!");
+    UObject::FindObject<UFunction>("Function FortniteGame.FortKismetLibrary.GetAllFortPlayerPawns");
+    UObject::FindObject<UFunction>("Function FortniteGame.FortGameStateAthena.OnRep_WinningPlayerName");
+    UObject::FindObject<UFunction>("Function FortniteGame.FortPlayerControllerAthena.PlayWinEffects");
+    UObject::FindObject<UFunction>("Function FortniteGame.FortPlayerControllerAthena.ClientNotifyWon");
+    UObject::FindObject<UFunction>("Function Engine.PlayerController.ClientGameEnded");
+    UObject::FindObject<UFunction>("Function Engine.GameMode.ReadyToEndMatch");
+    UObject::FindObject<UFunction>("Function Engine.GameMode.EndMatch");
 
     UFunctionHooks::Initialize();
 

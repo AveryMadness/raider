@@ -142,6 +142,14 @@ namespace Utils
         return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     }
 
+    bool GuidComp(FGuid guidA, FGuid guidB)
+    {
+        if (guidA.A == guidB.A && guidA.B == guidB.B && guidA.C == guidB.C && guidA.D == guidB.D)
+            return true;
+        else
+            return false;
+    }
+
     template <typename T>
     static T Max(T f, T s)
     {
@@ -149,15 +157,18 @@ namespace Utils
     }
 
     std::vector<std::string> AthenaConsumables = {
+        "/Game/Athena/Items/Consumables/Shields/Athena_Shields.Athena_Shields",
+        "/Game/Athena/Items/Consumables/ShieldSmall/Athena_ShieldSmall.Athena_ShieldSmall",
+        "/Game/Athena/Items/Consumables/PurpleStuff/Athena_PurpleStuff.Athena_PurpleStuff",
         "/Game/Athena/Items/Consumables/SuperMedkit/Athena_SuperMedkit.Athena_SuperMedkit",
+        "/Game/Athena/Items/Consumables/Grenade/Athena_Grenade.Athena_Grenade",
         "/Game/Athena/Items/Consumables/KnockGrenade/Athena_KnockGrenade.Athena_KnockGrenade",
+        "/Game/Athena/Items/Consumables/SmokeGrenade/Athena_SmokeGrenade.Athena_SmokeGrenade",
+        "/Game/Athena/Items/Consumables/StickyGrenade/Athena_StickyGrenade.Athena_StickyGrenade",
         "/Game/Athena/Items/Consumables/Bush/Athena_Bush.Athena_Bush",
         "/Game/Athena/Items/Consumables/Medkit/Athena_Medkit.Athena_Medkit",
         "/Game/Athena/Items/Consumables/DanceGrenade/Athena_DanceGrenade.Athena_DanceGrenade",
-        "/Game/Athena/Items/Consumables/DanceGrenade/Athena_DanceGrenade.Athena_DanceGrenade",
-        "/Game/Athena/Items/Consumables/DanceGrenade/Athena_DanceGrenade.Athena_DanceGrenade",
-        "/Game/Athena/Items/Consumables/DanceGrenade/Athena_DanceGrenade.Athena_DanceGrenade",
-        "/Game/Athena/Items/Consumables/DanceGrenade/Athena_DanceGrenade.Athena_DanceGrenade"
+        "/Game/Athena/Items/Consumables/SmokeGrenade/Athena_SmokeGrenade.Athena_SmokeGrenade"
     };
 
     std::vector<std::string> AthenaAssaultLootPool = {
@@ -168,7 +179,9 @@ namespace Utils
         "/Game/Athena/Items/Weapons/WID_Assault_Auto_Athena_C_Ore_T02.WID_Assault_Auto_Athena_C_Ore_T02",
         "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_C_Ore_T02.WID_Assault_SemiAuto_Athena_C_Ore_T02",
         "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_UC_Ore_T03.WID_Assault_SemiAuto_Athena_UC_Ore_T03",
-        "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_R_Ore_T03.WID_Assault_SemiAuto_Athena_R_Ore_T03"
+        "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_R_Ore_T03.WID_Assault_SemiAuto_Athena_R_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Assault_LMG_Athena_VR_Ore_T03.WID_Assault_LMG_Athena_VR_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Assault_LMG_Athena_SR_Ore_T03.WID_Assault_LMG_Athena_SR_Ore_T03"
     };
 
     std::vector<std::string> AthenaShotgunLootPool = {
@@ -183,7 +196,6 @@ namespace Utils
     };
 
     std::vector<std::string> AthenaSmgLootPool = {
-        "/Game/Athena/Items/Weapons/WID_Pistol_Scavenger_Athena_UC_Ore_T03.WID_Pistol_Scavenger_Athena_UC_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Pistol_Scavenger_Athena_R_Ore_T03.WID_Pistol_Scavenger_Athena_R_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Pistol_Scavenger_Athena_VR_Ore_T03.WID_Pistol_Scavenger_Athena_VR_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavy_Athena_C_Ore_T02.WID_Pistol_AutoHeavy_Athena_C_Ore_T02",
@@ -283,8 +295,66 @@ namespace Utils
         "/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy"
     };
 
+    std::vector<std::string> PickaxePool = {
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Anchor_Athena.WID_Harvest_Pickaxe_Anchor_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_ArtDeco.WID_Harvest_Pickaxe_ArtDeco",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Assassin.WID_Harvest_Pickaxe_Assassin",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Athena_C_T01.WID_Harvest_Pickaxe_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_BoltOn_Athena_C_T01.WID_Harvest_Pickaxe_BoltOn_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Brite.WID_Harvest_Pickaxe_Brite",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Carrot.WID_Harvest_Pickaxe_Carrot",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_CircuitBreaker.WID_Harvest_Pickaxe_CircuitBreaker",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_CuChulainn.WID_Harvest_Pickaxe_CuChulainn",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Deathvalley_Athena_C_T01.WID_Harvest_Pickaxe_Deathvalley_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Disco_Athena.WID_Harvest_Pickaxe_Disco_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_District_Athena.WID_Harvest_Pickaxe_District_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Dragon.WID_Harvest_Pickaxe_Dragon",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Flamingo_Athena_C_T01.WID_Harvest_Pickaxe_Flamingo_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Heart_Athena.WID_Harvest_Pickaxe_Heart_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_HolidayCandyCane_Athena.WID_Harvest_Pickaxe_HolidayCandyCane_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_HolidayGiftWrap_Athena.WID_Harvest_Pickaxe_HolidayGiftWrap_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_IcePick_Athena_C_T01.WID_Harvest_Pickaxe_IcePick_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Keg_Athena.WID_Harvest_Pickaxe_Keg_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Lockjaw_Athena_C_T01.WID_Harvest_Pickaxe_Lockjaw_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Medieval_Athena.WID_Harvest_Pickaxe_Medieval_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Megalodon_Athena.WID_Harvest_Pickaxe_Megalodon_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_PajamaParty.WID_Harvest_Pickaxe_PajamaParty",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Pizza.WID_Harvest_Pickaxe_Pizza",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Plunger.WID_Harvest_Pickaxe_Plunger",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_PotOfGold.WID_Harvest_Pickaxe_PotOfGold",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Prismatic.WID_Harvest_Pickaxe_Prismatic",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_RockerPunk.WID_Harvest_Pickaxe_RockerPunk",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Scavenger.WID_Harvest_Pickaxe_Scavenger",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Shark_Athena.WID_Harvest_Pickaxe_Shark_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_SickleBat_Athena_C_T01.WID_Harvest_Pickaxe_SickleBat_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_SkiBoot.WID_Harvest_Pickaxe_SkiBoot",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Smiley_Athena_C_T01.WID_Harvest_Pickaxe_Smiley_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Space.WID_Harvest_Pickaxe_Space",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Spikey_Athena_C_T01.WID_Harvest_Pickaxe_Spikey_Athena_C_T01",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Squeak.WID_Harvest_Pickaxe_Squeak",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Stealth.WID_Harvest_Pickaxe_Stealth",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Tactical.WID_Harvest_Pickaxe_Tactical",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_TacticalBlack.WID_Harvest_Pickaxe_TacticalBlack",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_TacticalUrban.WID_Harvest_Pickaxe_TacticalUrban",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Teslacoil_Athena.WID_Harvest_Pickaxe_Teslacoil_Athena",
+        "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_WinterCamo_Athena.WID_Harvest_Pickaxe_WinterCamo_Athena"
+    };
+
     
-    
+    static UFortItemDefinition* GetRandomPickaxe()
+    {
+        while (true)
+        {
+            auto Idx = Globals::MathLibrary->STATIC_RandomInteger(PickaxePool.size());
+            auto Item = PickaxePool[Idx];
+            auto Def = Utils::FindObjectFast<UFortItemDefinition>(Item);
+            if (!Def)
+                continue;
+            auto rng = std::default_random_engine {};
+            std::shuffle(PickaxePool.begin(), PickaxePool.end(), rng);
+            return Def;
+        }
+    }
 
     static UFortItemDefinition* GetRandomItemDefinition()
     {
@@ -326,7 +396,7 @@ namespace Utils
             return AthenaSniperLootPool;
         if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.7))
             return AthenaRocketLootPool;
-        return CalculateLootType();
+        return AthenaAssaultLootPool;
     }
     
 

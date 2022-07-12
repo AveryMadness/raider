@@ -56,7 +56,7 @@ namespace GUI
 					{
                         auto DeadPC = (AFortPlayerControllerAthena*)currentPlayer->Owner;
                         auto DeadPawn = (AFortPlayerPawnAthena*)DeadPC->Pawn;
-                        InitPawn((AFortPlayerControllerAthena*)currentPlayer->Owner, FVector(0, 0, 2900 + 5000), FQuat(), true, true);
+                        InitPawn((AFortPlayerControllerAthena*)currentPlayer->Owner, FVector(0, 0, 2900 + 5000), FQuat(), false, true);
                         DeadPawn->CharacterMovement->SetMovementMode(EMovementMode::MOVE_Custom, 3U);
                         bool bFound = false;
                         auto PickaxeEntry = FindItemInInventory<UFortWeaponMeleeItemDefinition>(DeadPC, bFound);
@@ -92,7 +92,14 @@ namespace GUI
                     if (ZeroGUI::Button(L"Kick", { 60.0f, 25.0f }))
                     {
                         KickController((AFortPlayerControllerAthena*)currentPlayer->Owner, L"You have been kicked by the server.");
+                        mtx.lock();
+                        currentPlayer = nullptr;
+                        mtx.unlock();
+                    }
 
+                    if (ZeroGUI::Button(L"Anticheat Kick", {60.0f, 25.0f}))
+                    {
+                        AnticheatKick((AFortPlayerControllerAthena*)currentPlayer->Owner);
                         mtx.lock();
                         currentPlayer = nullptr;
                         mtx.unlock();
@@ -150,6 +157,21 @@ namespace GUI
                         currentPlayer = nullptr;
                         mtx.unlock();
                     }
+                    if (ZeroGUI::Button(L"Spawn Supply Drop", FVector2D {100.0f, 25.0f}))
+                    {
+                        auto PC = (AFortPlayerControllerAthena*)currentPlayer->Owner;
+						auto Pawn = (AFortPlayerPawnAthena*)PC->Pawn;
+                        FTransform SpawnTransform;
+                        SpawnTransform.Rotation = FQuat {};
+                        SpawnTransform.Scale3D = FVector { 1, 1, 1 };
+						SpawnTransform.Translation = Pawn->K2_GetActorLocation();
+                        SpawnActorTrans(AFortAthenaSupplyDrop::StaticClass(), SpawnTransform);
+                        mtx.lock();
+                        currentPlayer = nullptr;
+                        mtx.unlock();
+												
+						
+                    }
 					
                     
                     
@@ -199,7 +221,7 @@ namespace GUI
                             }
                              if (ZeroGUI::Button(L"Restart Server", FVector2D { 100, 25 }))
 							{
-                                 GetWorld()->NetDriver->ServerConnection->PlayerController->SwitchLevel(L"Athena_Terrain?game=/Game/Athena/Athena_GameMode.Athena_GameMode_C");
+                                 bRestart = true;
 							} 
                             if (ZeroGUI::Button(L"Spawn Floor Loot", FVector2D {100, 25}))
                             {
@@ -209,6 +231,15 @@ namespace GUI
                             {
                                 auto GameMode = (AAthena_GameMode_C*)GetWorld()->AuthorityGameMode;
                                 GameMode->TrySupplyDrop();
+                            }
+                            if (ZeroGUI::Button(L"Destroy All Pickups", FVector2D {100, 25}))
+                            {
+                                auto Pickups = GetAllActorsOfClass(AFortPickupAthena::StaticClass());
+                                for (int i = 0; i < Pickups.Num(); i++)
+								{
+									auto Pickup = (AFortPickupAthena*)Pickups[i];
+									Pickup->K2_DestroyActor();
+								}
                             }
                         
                         break;

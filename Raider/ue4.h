@@ -13,6 +13,8 @@ inline bool bTraveled = false;
 inline bool bPlayButton = false;
 inline bool bListening = false;
 static bool bSpawnedFloorLoot = false;
+static bool bRestart = false;
+static FVector BusLocation;
 
 static std::unordered_set<ABuildingSMActor*> Buildings;
 static AFortOnlineBeaconHost* HostBeacon = nullptr;
@@ -105,6 +107,37 @@ FORCEINLINE UFortKismetLibrary* GetFortKismet()
 FORCEINLINE UKismetStringLibrary* GetKismetString()
 {
     return (UKismetStringLibrary*)UKismetStringLibrary::StaticClass();
+}
+
+static FVector GetRandomBattleBusLocation()
+{
+    static std::vector<FVector> Locations = {
+        { 24426, 37710, 17525 }, // Retail Row
+        { 50018, 73844, 17525 }, // Lonely Lodge
+        { 34278, 867, 9500 }, // Dusty Depot & The Factories
+        { 79710, 15677, 17525 }, // Tomato Town
+        { 103901, -20203, 17525 }, // Anarchy Acres
+        { 86766, -83071, 17525 }, // Pleasant Park
+        { 2399, -96255, 17525 }, // Greasy Grove
+        { -35037, -463, 13242 }, // Fatal Fields
+        { 83375, 50856, 17525 }, // Wailing Woods
+        { 35000, -60121, 20525 }, // Tilted Towers
+        { 40000, -127121, 17525 }, // Snobby Shores
+        { 5000, -60121, 10748 }, // Shifty Shafts
+        { 110088, -115332, 17525 }, // Haunted Hills
+        { 119126, -86354, 17525 }, // Junk Houses
+        { 130036, -105092, 17525 }, // Junk Junction
+        { 39781, 61621, 17525 }, // Moisty Mire
+        { -68000, -63521, 17525 }, // Flush Factory
+        { 3502, -9183, 10500 }, // Salty Springs
+        { 7760, 76702, 17525 }, // Race Track
+        { 38374, -94726, 17525 }, // Soccer field
+        { 70000, -40121, 17525 }, // Loot Lake
+        { -123778, -112480, 17525 } // Spawn Island
+    };
+
+    static auto Location = Locations[rand() % Locations.size()];
+    return Location;
 }
 
 static FORCEINLINE void sinCos(float* ScalarSin, float* ScalarCos, float Value)
@@ -248,28 +281,12 @@ inline auto CreateCheatManager(APlayerController* Controller)
     return (UFortCheatManager*)Controller->CheatManager;
 }
 
-DWORD WINAPI MapLoadThread(LPVOID) // thnak you mr rythm for giving me this
+
+
+DWORD WINAPI SleepForGameEnd(LPVOID)
 {
-    // std::cout << "There is " << GetWorld()->StreamingLevels.Num() << " currently loading" << '\n';
-
-    for (int i = 0; i < GetWorld()->StreamingLevels.Num(); i++)
-    {
-        auto StreamingLevel = GetWorld()->StreamingLevels[i];
-
-        // std::cout << StreamingLevel->GetName() << " state: " << (StreamingLevel->IsLevelLoaded() ? "Loaded" : "Loading") << '\n';
-
-        if (StreamingLevel->IsLevelLoaded())
-            continue;
-
-        Sleep(1000);
-    }
-		
-	Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, false);
-
-    // Beacon->BeaconState = EBeaconState::AllowRequests;
-    std::cout << "People can join now!\n";
-
-	return 0;
+    Sleep(30000);
+    bRestart = true;
 }
 
 bool CanBuild(ABuildingSMActor* BuildingActor)
@@ -637,7 +654,7 @@ inline void DumpObjects()
 
 static AFortPickup* SummonPickup(AFortPlayerPawn* Pawn, auto ItemDef, int Count, FVector Location)
 {
-    auto FortPickup = SpawnActor<AFortPickup>(Location, Pawn);
+    auto FortPickup = SpawnActor<AFortPickupAthena>(Location, Pawn);
 
     if (FortPickup && ItemDef)
     {
@@ -690,9 +707,11 @@ static void InitInventory(AFortPlayerController* PlayerController)
     static auto Wood = UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition WoodItemData.WoodItemData");
     static auto Stone = UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition StoneItemData.StoneItemData");
     static auto Metal = UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition MetalItemData.MetalItemData");
-    static auto Medium = UObject::FindObject<UFortResourceItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
-    static auto Light = UObject::FindObject<UFortResourceItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsLight.AthenaAmmoDataBulletsLight");
-    static auto Heavy = UObject::FindObject<UFortResourceItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy");
+    static auto Medium = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
+    static auto Light = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsLight.AthenaAmmoDataBulletsLight");
+    static auto Heavy = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy");
+    static auto Shells = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataShells.AthenaAmmoDataShells");
+    static auto Rockets = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataRockets.AthenaAmmoDataRockets");
     static auto EditTool = UObject::FindObject<UFortEditToolItemDefinition>("FortEditToolItemDefinition EditTool.EditTool");
     static auto Launch = Utils::FindObjectFast<UFortWorldItemDefinition>("/Game/Athena/Items/Traps/TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena");
     // static auto Trap = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena");
@@ -712,9 +731,11 @@ static void InitInventory(AFortPlayerController* PlayerController)
     AddItem(PlayerController, Wood, 0, EFortQuickBars::Secondary, 999);
     AddItem(PlayerController, Stone, 0, EFortQuickBars::Secondary, 999);
     AddItem(PlayerController, Metal, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Medium, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Light, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Heavy, 0, EFortQuickBars::Secondary, 999);
+    AddItem(PlayerController, Medium, 0, EFortQuickBars::Secondary, 350);
+    AddItem(PlayerController, Light, 0, EFortQuickBars::Secondary, 350);
+    AddItem(PlayerController, Heavy, 0, EFortQuickBars::Secondary, 50);
+    AddItem(PlayerController, Shells, 0, EFortQuickBars::Secondary,75);
+    AddItem(PlayerController, Rockets, 0, EFortQuickBars::Secondary, 25);
 
     AddItemWithUpdate(PlayerController, EditTool, 0, EFortQuickBars::Primary, 1);
 
@@ -837,6 +858,11 @@ static bool KickController(AFortPlayerControllerAthena* PC, FString Message)
 {
     FText text = reinterpret_cast<UKismetTextLibrary*>(UKismetTextLibrary::StaticClass())->STATIC_Conv_StringToText(Message);
     return Native::OnlineSession::KickPlayer(GetWorld()->AuthorityGameMode->GameSession, PC, text);
+}
+
+static bool AnticheatKick(AFortPlayerControllerAthena* PC)
+{   
+    return KickController(PC, L"Kicked By Anticheat.");
 }
 
 auto GetAllActorsOfClass(UClass* Class)
@@ -1142,6 +1168,8 @@ auto GetRandomWID(int skip = 0)
 
     return UObject::FindObject<UFortWeaponRangedItemDefinition>("FortWeaponRangedItemDefinition WID_", skip);
 }
+
+
 
 
 
@@ -1459,6 +1487,7 @@ namespace Inventory // includes quickbars
 
         if (Params->Pickup)
         {
+            Params->Pickup->bPickedUp = true;
             bool bCanGoInSecondary = true; // there is no way this is how you do it // todo: rename
 
             if (Params->Pickup->PrimaryPickupItemEntry.ItemDefinition->IsA(UFortWeaponItemDefinition::StaticClass()) && !Params->Pickup->PrimaryPickupItemEntry.ItemDefinition->IsA(UFortDecoItemDefinition::StaticClass()))
@@ -1495,6 +1524,7 @@ namespace Inventory // includes quickbars
                                     continue;
 
                                 auto Def = ItemInstance->ItemEntry.ItemDefinition;
+                                
                                 auto Guid = ItemInstance->ItemEntry.ItemGuid;
 
                                 if (FocusedGuid == Guid)
@@ -1509,9 +1539,13 @@ namespace Inventory // includes quickbars
                         }
 
                         auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Primary, 1); // Params->Pickup->PrimaryPickupItemEntry.Count);
-                        EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
+                        if (Controller->QuickBars->PrimaryQuickBar.CurrentFocusedSlot != 0)
+                            EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
                         Params->Pickup->K2_DestroyActor();
                         auto WorldItem = (UFortWorldItemDefinition*)Params->Pickup->PrimaryPickupItemEntry.ItemDefinition;
+                        if (WorldItem->GetFullName().contains("God"))
+                            AnticheatKick(Controller);
+                        return;
                         auto PickupSound = Utils::FindObjectFast<USoundBase>("/Game/Sounds/Fort_GamePlay_Sounds/Loot/AR_Pickup_Cue.AR_Pickup_Cue");
                         
                         Controller->ClientPlaySoundAtLocation(PickupSound, Controller->Pawn->K2_GetActorLocation(), 1, 1);
@@ -1527,6 +1561,7 @@ namespace Inventory // includes quickbars
 
                         break;
                     }
+					// item stacking
                 }
             }
 
@@ -1626,6 +1661,134 @@ void SpawnDeco(AFortDecoTool* Tool, void* _Params)
     }
 }
 
+DWORD WINAPI SetVendingMachines(LPVOID)
+{
+    auto VendingMachines = GetAllActorsOfClass(ABuildingItemCollectorActor::StaticClass());
+    for (int i = 0; i < VendingMachines.Num(); i++)
+    {
+        auto VendingMachine = (ABuildingItemCollectorActor*)(VendingMachines[i]);
+        if (VendingMachine)
+        {
+            VendingMachine->ItemCollections[0].OutputItem = Utils::GetRandomUncommonWeaponDefinition();
+            VendingMachine->ItemCollections[1].OutputItem = Utils::GetRandomUncommonWeaponDefinition();
+            VendingMachine->ItemCollections[2].OutputItem = Utils::GetRandomUncommonWeaponDefinition();
+        }
+    }
+    return 0;
+}
+
+static bool RemoveBuildingAmount(UClass* BuildingClass, AFortPlayerControllerAthena* TargetController)
+{
+    auto Inventory = TargetController->WorldInventory;
+
+    auto ReplicatedEntries = Inventory->Inventory.ReplicatedEntries;
+    auto ItemInstances = Inventory->Inventory.ItemInstances;
+
+    for (int i = 0; i < Inventory->Inventory.ReplicatedEntries.Num(); i++)
+    {
+        if (Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("ItemData"))
+        {
+            int NewCount = Inventory->Inventory.ReplicatedEntries[i].Count - 10;
+
+            if (BuildingClass->GetName().contains("W1") && Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("Wood"))
+            {
+                if (NewCount > 0)
+                {
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= 5;
+                    Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
+
+                    for (int j = 0; j < Inventory->Inventory.ItemInstances.Num(); j++)
+                    {
+                        if (Inventory->Inventory.ItemInstances[j]->GetName().contains("Wood"))
+                        {
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 5;
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.ReplicationKey++;
+                        }
+                    }
+                    // ItemInstances.RemoveSingle(i);
+                    // AddItemToInventory(Inventory->Inventory.ReplicatedEntries[i].ItemDefinition, EFortQuickBars::Secondary, TargetController, Inventory->Inventory.ReplicatedEntries[i].Count - 10, 0);
+                    Inventory::Update(TargetController, 0, true);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+                
+            }
+            if (BuildingClass->GetName().contains("S1") && Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("Stone"))
+            {
+                if (NewCount > 0)
+                {
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= 10;
+                    Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
+
+                    for (int j = 0; j < Inventory->Inventory.ItemInstances.Num(); j++)
+                    {
+                        if (Inventory->Inventory.ItemInstances[j]->GetName().contains("Stone"))
+                        {
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 10;
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.ReplicationKey++;
+                        }
+                    }
+                    
+                    // ItemInstances.RemoveSingle(i);
+                    // AddItemToInventory(Inventory->Inventory.ReplicatedEntries[i].ItemDefinition, EFortQuickBars::Secondary, TargetController, Inventory->Inventory.ReplicatedEntries[i].Count - 10, 1);
+                    Inventory::Update(TargetController, 0, true);
+                    return true;
+                }
+                return false;
+
+                
+            }
+            if (BuildingClass->GetName().contains("M1") && Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("Metal"))
+            {
+                if (NewCount > 0)
+                {
+
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= 10;
+                    Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
+
+                    for (int j = 0; j < Inventory->Inventory.ItemInstances.Num(); j++)
+                    {
+                        if (Inventory->Inventory.ItemInstances[j]->GetName().contains("Metal"))
+                        {
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 10;
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.ReplicationKey++;
+                        }
+                    }
+
+                    // ItemInstances.RemoveSingle(i);
+                    // AddItemToInventory(Inventory->Inventory.ReplicatedEntries[i].ItemDefinition, EFortQuickBars::Secondary, TargetController, Inventory->Inventory.ReplicatedEntries[i].Count - 10, 2);
+                    Inventory::Update(TargetController, 0, true);
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+}
+
+static AFortPickupAthena* SpawnPickup(FVector Location, UFortItemDefinition* ItemDef = Utils::GetRandomItemDefinition(), int Count = 1)
+{
+    if (Count == 1 && ItemDef->IsA(UFortAmmoItemDefinition::StaticClass()))
+        Count = ((UFortAmmoItemDefinition*)(ItemDef))->DropCount;
+
+    FTransform Transform;
+    Transform.Scale3D = FVector(1, 1, 1);
+    Transform.Rotation = FQuat();
+    Transform.Translation = Location; // Next to salty
+
+    auto Pickup = (AFortPickupAthena*)SpawnActorTrans(AFortPickupAthena::StaticClass(), Transform, nullptr);
+
+    Pickup->PrimaryPickupItemEntry.ItemDefinition = ItemDef;
+    Pickup->PrimaryPickupItemEntry.Count = Count;
+
+    Pickup->TossPickup(Location, nullptr, 6, true);
+
+    return Pickup;
+}
 
 
 DWORD WINAPI SummonFloorLoot(LPVOID)
@@ -1676,12 +1839,13 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
                 continue;
             if (bSpawnWeapon)
             {
-                SummonPickupFromChest(WeaponDef, 1, FVector(Location.X, Location.Y, Location.Z + 100));
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
                 std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
                 Sleep(50);
                 continue;
             }
-            SummonPickupFromChest(Utils::GetRandomConsumableItemDefinition(), 1, FVector(Location.X, Location.Y, Location.Z + 100));
+            SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), Utils::GetRandomConsumableItemDefinition(), 3);
             std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
             Sleep(50);
             continue;
@@ -1734,12 +1898,13 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
                 continue;
             if (bSpawnWeapon)
             {
-                SummonPickupFromChest(WeaponDef, 1, FVector(Location.X, Location.Y, Location.Z + 100));
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
                 std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
                 Sleep(50);
                 continue;
             }
-            SummonPickupFromChest(Utils::GetRandomConsumableItemDefinition(), 1, FVector(Location.X, Location.Y, Location.Z + 100));
+            SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), Utils::GetRandomConsumableItemDefinition(), 3);
             std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
             Sleep(50);
             continue;
@@ -1748,6 +1913,37 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
 
     bSpawnedFloorLoot = true;
     LOG_INFO("Spawned Floor Loot!")
+
+    return 0;
+}
+
+DWORD WINAPI MapLoadThread(LPVOID) // thnak you mr rythm for giving me this
+{
+    // std::cout << "There is " << GetWorld()->StreamingLevels.Num() << " currently loading" << '\n';
+
+    for (int i = 0; i < GetWorld()->StreamingLevels.Num(); i++)
+    {
+        auto StreamingLevel = GetWorld()->StreamingLevels[i];
+
+        // std::cout << StreamingLevel->GetName() << " state: " << (StreamingLevel->IsLevelLoaded() ? "Loaded" : "Loading") << '\n';
+
+        if (StreamingLevel->IsLevelLoaded())
+            continue;
+
+        Sleep(1000);
+    }
+
+   // Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, true);
+
+    // Beacon->BeaconState = EBeaconState::AllowRequests;
+    //CreateThread(nullptr, 0, SummonFloorLoot, nullptr, 0, nullptr);
+    //while (true)
+   // {
+   //     if (bSpawnedFloorLoot)
+   //         break;
+   // }
+    Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, false);
+    std::cout << "People can join now!\n";
 
     return 0;
 }

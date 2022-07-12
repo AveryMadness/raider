@@ -16,7 +16,7 @@ namespace Game
         Globals::bDBNO = false;
         Globals::bFriendlyFire = true;
         Globals::bLargeTeamGame = false;
-        Globals::bRespawnPlayers = false;
+        Globals::bRespawnPlayers = true;
         Globals::MaxHealth = 100;
         Globals::MaxShield = 100;
 		
@@ -24,7 +24,9 @@ namespace Game
         auto GameMode = reinterpret_cast<AAthena_GameMode_C*>(GetWorld()->AuthorityGameMode);
         static auto SoloPlaylist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
         static auto DuoPlaylist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultDuo.Playlist_DefaultDuo");
+        static auto PlaygroundList = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Playground.Playlist_Playground");
         auto InProgress = UObject::FindObject<UKismetStringLibrary>("Default__KismetStringLibrary")->STATIC_Conv_StringToName(L"InProgress");
+        ((UFortGameInstance*)GetWorld()->OwningGameInstance)->AthenaCodeOfConductURL = L"https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
         GameState->bGameModeWillSkipAircraft = true;
         GameState->AircraftStartTime = 9999.9f;
@@ -39,7 +41,7 @@ namespace Game
         GameMode->MatchState = InProgress;
         GameMode->K2_OnSetMatchState(InProgress);
 
-        auto Playlist = SoloPlaylist;
+        auto Playlist = PlaygroundList;
 
         if (Playlist)
         {
@@ -56,6 +58,11 @@ namespace Game
                 Playlist->FriendlyFireType = EFriendlyFireType::On;
                 GameMode->FriendlyFireType = EFriendlyFireType::On;
             }
+            if (Globals::bLateGame)
+            {
+                BusLocation = GetRandomBattleBusLocation();
+            }
+				
 
             GameState->CurrentPlaylistData = Playlist;
             GameState->OnRep_CurrentPlaylistData();
