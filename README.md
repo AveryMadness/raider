@@ -8,6 +8,9 @@ I am aware most of this code is very scuffed, and thats why half of it hasn't be
 If ANYBODY who has authority to take this down would like me to, contact me at averyfd@shaw.ca, averymadness62@gmail.com or on discord at AveryMadness#9112. I will be glad to fulfill your requests.
 - Avery
 
+## - NOTE
+Certain parts and pieces of code have been taken from other sources. If your code is included in this, and you wish to be credited, please let me know through the links above.
+
 ## - Current Importance
 - Harvesting/Material Farming (function needed)
 - Emoting 
