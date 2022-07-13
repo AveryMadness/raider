@@ -1820,7 +1820,6 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
         if (!FloorLootClass) // your summoning it too early
             return 1;
 
-        static auto Scar = FindWID("WID_Assault_AutoHigh_Athena_SR_Ore_T03");
         auto FloorLootActors = GetAllActorsOfClass(FloorLootClass);
 
         // it also crashes sometimes if you spawn alot on like constructionscript
@@ -1845,7 +1844,6 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
                 WeaponDef = Utils::GetRandomCommonWeaponDefinition();
             if (WeaponDef)
             {
-                std::cout << "Weapon Def Set Successfully!" << std::endl;
             }
             else
                 WeaponDef = (UFortWeaponItemDefinition*)Utils::GetRandomItemDefinition();
@@ -1861,19 +1859,15 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             {
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
-                std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
                 Sleep(50);
                 continue;
             }
             SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), Utils::GetRandomConsumableItemDefinition(), 3);
-            std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
             Sleep(50);
             continue;
-
-
-
             
         }
+        LOG_INFO("Finished Spawning Terrain Floorloot!");
 
           FloorLootClass = UObject::FindObject<UClass>("BlueprintGeneratedClass Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
 
@@ -1904,7 +1898,6 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
                 WeaponDef = Utils::GetRandomCommonWeaponDefinition();
             if (WeaponDef)
             {
-                std::cout << "Weapon Def Set Successfully!" << std::endl;
             }
             else
                 WeaponDef = (UFortWeaponItemDefinition*)Utils::GetRandomItemDefinition();
@@ -1920,12 +1913,10 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             {
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
-                std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
                 Sleep(50);
                 continue;
             }
             SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), Utils::GetRandomConsumableItemDefinition(), 3);
-            std::cout << "Floor Loot Location is: " << Location.X << " " << Location.Y << " " << Location.Z << std::endl;
             Sleep(50);
             continue;
         }
@@ -1953,6 +1944,8 @@ DWORD WINAPI MapLoadThread(LPVOID) // thnak you mr rythm for giving me this
         Sleep(1000);
     }
 
+    Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, true);
+
    // Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, true);
 
     // Beacon->BeaconState = EBeaconState::AllowRequests;
@@ -1962,6 +1955,7 @@ DWORD WINAPI MapLoadThread(LPVOID) // thnak you mr rythm for giving me this
    //     if (bSpawnedFloorLoot)
    //         break;
    // }
+    SummonFloorLoot(nullptr);
     Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, false);
     std::cout << "People can join now!\n";
 
