@@ -225,7 +225,8 @@ namespace GUI
 							} 
                             if (ZeroGUI::Button(L"Spawn Floor Loot", FVector2D {100, 25}))
                             {
-                                CreateThread(nullptr, 0, SummonFloorLoot, nullptr, 0, nullptr);
+                                if (!bSpawnedFloorLoot)
+                                    CreateThread(nullptr, 0, SummonFloorLoot, nullptr, 0, nullptr);
                             }
                             if (ZeroGUI::Button(L"Spawn Supply Drop", FVector2D {100, 25}))
                             {

@@ -417,7 +417,7 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition(std::vector<std::string> ForceLootPool)
+    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
     {
         while(true)
         {
@@ -434,7 +434,7 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition(std::vector<std::string> ForceLootPool)
+    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
     {
         while(true)
         {
@@ -450,7 +450,7 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition(std::vector<std::string> ForceLootPool)
+    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
     {
         while (true)
         {
@@ -467,7 +467,7 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition(std::vector<std::string> ForceLootPool)
+    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
     {
         while (true)
         {
