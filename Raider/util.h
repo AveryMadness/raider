@@ -400,11 +400,11 @@ namespace Utils
     }
     
 
-    static UFortWeaponItemDefinition* GetRandomGoldWeaponDefinition()
+    static UFortWeaponItemDefinition* GetRandomGoldWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
     {
         while (true)
         {
-            auto LootPool = CalculateLootType();
+            auto LootPool = ForceLootPool;
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -417,11 +417,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition()
+    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition(std::vector<std::string> ForceLootPool)
     {
         while(true)
         {
-            auto LootPool = CalculateLootType();
+            auto LootPool = ForceLootPool;
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
 			auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -434,11 +434,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition()
+    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition(std::vector<std::string> ForceLootPool)
     {
         while(true)
         {
-            auto LootPool = CalculateLootType();
+            auto LootPool = ForceLootPool;
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -450,11 +450,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition()
+    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition(std::vector<std::string> ForceLootPool)
     {
         while (true)
         {
-            auto LootPool = CalculateLootType();
+            auto LootPool = ForceLootPool;
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -467,11 +467,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition()
+    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition(std::vector<std::string> ForceLootPool)
     {
         while (true)
         {
-            auto LootPool = CalculateLootType();
+            auto LootPool = ForceLootPool;
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);

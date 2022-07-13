@@ -728,14 +728,6 @@ static void InitInventory(AFortPlayerController* PlayerController)
     // AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
     // AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
 
-    AddItem(PlayerController, Wood, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Stone, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Metal, 0, EFortQuickBars::Secondary, 999);
-    AddItem(PlayerController, Medium, 0, EFortQuickBars::Secondary, 350);
-    AddItem(PlayerController, Light, 0, EFortQuickBars::Secondary, 350);
-    AddItem(PlayerController, Heavy, 0, EFortQuickBars::Secondary, 50);
-    AddItem(PlayerController, Shells, 0, EFortQuickBars::Secondary,75);
-    AddItem(PlayerController, Rockets, 0, EFortQuickBars::Secondary, 25);
 
     AddItemWithUpdate(PlayerController, EditTool, 0, EFortQuickBars::Primary, 1);
 
@@ -1476,7 +1468,7 @@ namespace Inventory // includes quickbars
         return bWasSuccessful;
     }
 
-    inline void OnPickup(AFortPlayerControllerAthena* Controller, void* params)
+        inline void OnPickup(AFortPlayerControllerAthena* Controller, void* params)
     {
         auto Params = (AFortPlayerPawn_ServerHandlePickup_Params*)params;
 
@@ -1487,7 +1479,6 @@ namespace Inventory // includes quickbars
 
         if (Params->Pickup)
         {
-            Params->Pickup->bPickedUp = true;
             bool bCanGoInSecondary = true; // there is no way this is how you do it // todo: rename
 
             if (Params->Pickup->PrimaryPickupItemEntry.ItemDefinition->IsA(UFortWeaponItemDefinition::StaticClass()) && !Params->Pickup->PrimaryPickupItemEntry.ItemDefinition->IsA(UFortDecoItemDefinition::StaticClass()))
@@ -1503,6 +1494,9 @@ namespace Inventory // includes quickbars
                 {
                     if (!PrimaryQuickBarSlots[i].Items.Data) // Checks if the slot is empty
                     {
+                        if (Params->Pickup->IsActorBeingDestroyed() || Params->Pickup->bPickedUp)
+                            return;
+
                         if (i >= 6)
                         {
                             auto QuickBars = Controller->QuickBars;
@@ -1524,56 +1518,73 @@ namespace Inventory // includes quickbars
                                     continue;
 
                                 auto Def = ItemInstance->ItemEntry.ItemDefinition;
-                                
                                 auto Guid = ItemInstance->ItemEntry.ItemGuid;
 
                                 if (FocusedGuid == Guid)
                                 {
+                                    // if (Params->Pickup->MultiItemPickupEntries)
                                     SummonPickup((APlayerPawn_Athena_C*)Controller->Pawn, Def, 1 /* ItemInstance->ItemEntry.Count */, Controller->Pawn->K2_GetActorLocation());
                                     break;
                                 }
                             }
 
-                            if (Inventory::RemoveItemFromSlot(Controller, FocusedSlot, EFortQuickBars::Primary))
-                                Inventory::Update(Controller, 0, true);
+                            Inventory::RemoveItemFromSlot(Controller, FocusedSlot, EFortQuickBars::Primary);
                         }
 
-                        auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Primary, 1); // Params->Pickup->PrimaryPickupItemEntry.Count);
-                        if (Controller->QuickBars->PrimaryQuickBar.CurrentFocusedSlot != 0)
-                            EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
-                        Params->Pickup->K2_DestroyActor();
-                        auto WorldItem = (UFortWorldItemDefinition*)Params->Pickup->PrimaryPickupItemEntry.ItemDefinition;
-                        if (WorldItem->GetFullName().contains("God"))
-                            AnticheatKick(Controller);
-                        return;
+                        int Idx = 0;
+                        auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Primary, Params->Pickup->PrimaryPickupItemEntry.Count, &Idx);
                         auto PickupSound = Utils::FindObjectFast<USoundBase>("/Game/Sounds/Fort_GamePlay_Sounds/Loot/AR_Pickup_Cue.AR_Pickup_Cue");
-                        
                         Controller->ClientPlaySoundAtLocation(PickupSound, Controller->Pawn->K2_GetActorLocation(), 1, 1);
-                        if (Params->Pickup->PickupEffectBlueprint.Get())
-                        {
-                            auto PickupEffect = Params->Pickup->PickupEffectBlueprint.Get();
-                            std::cout << "Pickup Blueprint Effect is: " << PickupEffect->GetName() << std::endl;
-                            PickupEffect->OnPickedUp();
-                        }
-                        else
-							std::cout << "Pickup Blueprint Effect is NULL!\n" << std::endl;
+                        // auto& Entry = Controller->WorldInventory->Inventory.ReplicatedEntries[Idx];
+                        auto Instance = GetInstanceFromGuid(Controller, entry.ItemGuid);
+                        Params->Pickup->K2_DestroyActor();
+
+                        Params->Pickup->bPickedUp = true;
+                        Params->Pickup->OnRep_bPickedUp();
+
+                        Instance->ItemEntry.LoadedAmmo = Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
+                        EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
+
                         Inventory::Update(Controller);
 
                         break;
                     }
-					// item stacking
                 }
             }
 
             else
             {
                 auto& SecondaryQuickBarSlots = Controller->QuickBars->SecondaryQuickBar.Slots;
+                bool Break = false;
+
+                for (int i = 0; i < Controller->WorldInventory->Inventory.ItemInstances.Num(); i++)
+                {
+                    auto Instance = Controller->WorldInventory->Inventory.ItemInstances[i];
+
+                    if (Instance->ItemEntry.ItemDefinition->GetName() == WorldItemDefinition->GetName())
+                    {
+                        Instance->ItemEntry.LoadedAmmo += Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
+                        int Count = Instance->ItemEntry.Count + Params->Pickup->PrimaryPickupItemEntry.Count;
+                        Instance->ItemEntry.Count = Count;
+
+                        Controller->WorldInventory->Inventory.ReplicatedEntries.RemoveAt(i);
+                        Controller->WorldInventory->Inventory.ItemInstances.RemoveAt(i);
+                        auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Secondary, Count);
+                        Params->Pickup->K2_DestroyActor();
+                        // std::cout << "Found\n";
+                        Break = true;
+                        break;
+                    }
+                }
 
                 for (int i = 0; i < SecondaryQuickBarSlots.Num(); i++)
                 {
-                    if (!SecondaryQuickBarSlots[i].Items.Data) // Checks if the slot is empty
+                    if (Break)
+                        break;
+
+                    if (!SecondaryQuickBarSlots[i].Items.Data && !Break) // Checks if the slot is empty
                     {
-                        auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Secondary, 1); // Params->Pickup->PrimaryPickupItemEntry.Count);
+                        auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Secondary, Params->Pickup->PrimaryPickupItemEntry.Count);
                         Params->Pickup->K2_DestroyActor();
 
                         break;
@@ -1583,6 +1594,15 @@ namespace Inventory // includes quickbars
         }
     }
 }
+
+/*EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
+                        auto WorldItem = (UFortWorldItemDefinition*)Params->Pickup->PrimaryPickupItemEntry.ItemDefinition;
+                        if (WorldItem->GetFullName().contains("God"))
+                            AnticheatKick(Controller);
+                        return;
+                        auto PickupSound = Utils::FindObjectFast<USoundBase>("/Game/Sounds/Fort_GamePlay_Sounds/Loot/AR_Pickup_Cue.AR_Pickup_Cue");
+                        
+                        Controller->ClientPlaySoundAtLocation(PickupSound, Controller->Pawn->K2_GetActorLocation(), 1, 1);*/
 
 void EquipTrapTool(AController* Controller)
 {

@@ -205,7 +205,28 @@ namespace UFunctionHooks
         if (PC && Params && CurrentBuildClass)
         {
             {
-                if (RemoveBuildingAmount(CurrentBuildClass, PC))
+                if (Globals::bRespawnPlayers)
+                {
+                    auto BuildingActor = (ABuildingSMActor*)SpawnActor(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, PC, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+                    // SpawnBuilding(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, (APlayerPawn_Athena_C*)PC->Pawn);
+                    if (BuildingActor && CanBuild2(BuildingActor))
+                    {
+                        // Buildings.insert(BuildingActor); // Add as soon as possible to make sure there is no time to double build.
+
+                        BuildingActor->DynamicBuildingPlacementType = EDynamicBuildingPlacementType::DestroyAnythingThatCollides;
+                        BuildingActor->SetMirrored(Params->bMirrored);
+                        // BuildingActor->PlacedByPlacementTool();
+                        BuildingActor->InitializeKismetSpawnedBuildingActor(BuildingActor, PC);
+                        BuildingActor->Team = PlayerState->TeamIndex;
+                    }
+                    else
+                    {
+                        BuildingActor->SetActorScale3D({});
+                        BuildingActor->SilentDie();
+                    }
+                    return false;
+                }
+                if (RemoveBuildingAmount(CurrentBuildClass, PC) && !Globals::bRespawnPlayers)
                 {
                     auto BuildingActor = (ABuildingSMActor*)SpawnActor(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, PC, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
                     // SpawnBuilding(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, (APlayerPawn_Athena_C*)PC->Pawn);

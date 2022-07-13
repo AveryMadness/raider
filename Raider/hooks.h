@@ -253,6 +253,8 @@ namespace Hooks
 
         auto CheatManager = CreateCheatManager(PlayerController);
         CheatManager->ToggleInfiniteDurability();
+        if (Globals::bRespawnPlayers)
+            CheatManager->ToggleInfiniteAmmo();
 
         if (PlayerController->Pawn)
         {
