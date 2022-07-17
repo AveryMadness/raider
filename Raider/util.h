@@ -394,7 +394,7 @@ namespace Utils
             return AthenaPistolLootPool;
         if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.10))
             return AthenaSniperLootPool;
-        if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.7))
+        if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.07))
             return AthenaRocketLootPool;
         return AthenaAssaultLootPool;
     }
