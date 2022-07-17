@@ -362,15 +362,21 @@ namespace Utils
         {
             if (Globals::MathLibrary)
             {
+                std::cout << "Math Library is Valid!" << std::endl;
             }
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(AthenaLootPool.size());
+            std::cout << "STATIC_RandomInteger Called! Idx set!" << std::endl;
             auto Item = AthenaLootPool[Idx];
+            std::cout << "Item name found! Item Name: " << Item << std::endl;
             auto Def = Utils::FindObjectFast<UFortItemDefinition>(Item);
             if (!Def)
                 continue;
 
+            std::cout << "Item Def is valid!, Item Name: " << Def->GetName() << std::endl;
             auto rng = std::default_random_engine {};
+            std::cout << "rng set!" << std::endl;
             std::shuffle(AthenaLootPool.begin(), AthenaLootPool.end(), rng);
+            std::cout << "Loot pool shuffled." << std::endl;
             return Def;
         }
     }
@@ -394,11 +400,11 @@ namespace Utils
     }
     
 
-    static UFortWeaponItemDefinition* GetRandomGoldWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
+    static UFortWeaponItemDefinition* GetRandomGoldWeaponDefinition()
     {
         while (true)
         {
-            auto LootPool = ForceLootPool;
+            auto LootPool = CalculateLootType();
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -411,11 +417,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
+    static UFortWeaponItemDefinition* GetRandomEpicWeaponDefinition()
     {
         while(true)
         {
-            auto LootPool = ForceLootPool;
+            auto LootPool = CalculateLootType();
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
 			auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -428,11 +434,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
+    static UFortWeaponItemDefinition* GetRandomRareWeaponDefinition()
     {
         while(true)
         {
-            auto LootPool = ForceLootPool;
+            auto LootPool = CalculateLootType();
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -444,11 +450,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
+    static UFortWeaponItemDefinition* GetRandomUncommonWeaponDefinition()
     {
         while (true)
         {
-            auto LootPool = ForceLootPool;
+            auto LootPool = CalculateLootType();
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -461,11 +467,11 @@ namespace Utils
         }
     }
 
-    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition(std::vector<std::string> ForceLootPool = CalculateLootType())
+    static UFortWeaponItemDefinition* GetRandomCommonWeaponDefinition()
     {
         while (true)
         {
-            auto LootPool = ForceLootPool;
+            auto LootPool = CalculateLootType();
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
             auto Item = LootPool[Idx];
             auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
@@ -484,15 +490,21 @@ namespace Utils
         {
             if (Globals::MathLibrary)
             {
+                std::cout << "Math Library is Valid!" << std::endl;
             }
             auto Idx = Globals::MathLibrary->STATIC_RandomInteger(AthenaConsumables.size());
+            std::cout << "STATIC_RandomInteger Called! Idx set!" << std::endl;
             auto Item = AthenaConsumables[Idx];
+            std::cout << "Item name found! Item Name: " << Item << std::endl;
             auto Def = Utils::FindObjectFast<UFortItemDefinition>(Item);
             if (!Def)
                 continue;
 
+            std::cout << "Item Def is valid!, Item Name: " << Def->GetName() << std::endl;
             auto rng = std::default_random_engine {};
+            std::cout << "rng set!" << std::endl;
             std::shuffle(AthenaConsumables.begin(), AthenaConsumables.end(), rng);
+            std::cout << "Loot pool shuffled." << std::endl;
             return Def;
         }
     }

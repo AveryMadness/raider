@@ -457,7 +457,7 @@ public:
 	unsigned char                                      bAllowTickBeforeBeginPlay : 1;                            // 0x0081(0x0001) (Edit, DisableEditOnInstance)
 	unsigned char                                      bAutoDestroyWhenFinished : 1;                             // 0x0081(0x0001) (BlueprintVisible)
 	unsigned char                                      bBlockInput : 1;                                          // 0x0081(0x0001) (Edit, DisableEditOnInstance)
-	unsigned char                                      bCanBeDamaged : 1;                                        // 0x0081(0x0001) (Edit, BlueprintVisible, Net, SaveGame)
+	unsigned char												bCanBeDamaged : 1;                                        // 0x0081(0x0001) (Edit, BlueprintVisible, Net, SaveGame)
 	unsigned char                                      bCollideWhenPlacing : 1;                                  // 0x0082(0x0001)
 	unsigned char                                      bFindCameraComponentWhenViewTarget : 1;                   // 0x0082(0x0001) (Edit, BlueprintVisible)
 	unsigned char                                      bGenerateOverlapEventsDuringLevelStreaming : 1;           // 0x0082(0x0001) (Edit, BlueprintVisible)

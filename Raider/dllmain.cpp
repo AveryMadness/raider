@@ -26,6 +26,8 @@ DWORD WINAPI Main(LPVOID lpParam)
     UObject::FindObject<UFunction>("Function Engine.PlayerController.ClientGameEnded");
     UObject::FindObject<UFunction>("Function Engine.GameMode.ReadyToEndMatch");
     UObject::FindObject<UFunction>("Function Engine.GameMode.EndMatch");
+    TArray<AFortPlayerPawn*> PlayerPawns;
+    GetFortKismet()->STATIC_GetAllFortPlayerPawns(GetWorld(), &PlayerPawns);
 
     UFunctionHooks::Initialize();
 

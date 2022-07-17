@@ -2072,7 +2072,7 @@ public:
 	void UpdateDynamicShrinkAndDestroyEffect(float CurveValue);
 	void SetTextureData(TArray<class UTexture2D*> InTextures);
 	void SetMirrored(bool bIsMirrored);
-	void RepairBuilding(class AFortPlayerController* RepairingController, int ResourcesSpent);
+	void RepairBuilding(class AFortPlayerController* RepairingController, int ResourcesSpent);	
 	TArray<class UTexture2D*> ReadTextureData();
 	void OnRepairStarted();
 	void OnRep_ResourceType(TEnumAsByte<EFortResourceType> OldType);

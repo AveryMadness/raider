@@ -337,6 +337,7 @@ namespace Native
 		Address = Utils::FindPattern("89 54 24 10 55 41 56 48 8D 6C 24 ? 48 81 EC ? ? ? ? 80 B9 ? ? ? ? ? 4C 8B F1 0F 85 ? ? ? ? 48 8B 01 FF 90 ? ? ? ? 84 C0 0F 84 ? ? ? ?");
         CheckNullFatal(Address, "Failed to find OnReload");
         AddressToFunction(Address, OnReload);
+		
 
         ProcessEvent = reinterpret_cast<decltype(ProcessEvent)>(GetEngine()->Vtable[0x40]);
     }

@@ -283,6 +283,7 @@ namespace UFunctionHooks
         DEFINE_PEHOOK("Function FortniteGame.FortPlayerController.ServerEditBuildingActor", {
         auto Params = (AFortPlayerController_ServerEditBuildingActor_Params*)Parameters;
         auto PC = (AFortPlayerControllerAthena*)Object;
+        auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
 
         if (PC && Params)
         {
@@ -393,6 +394,7 @@ namespace UFunctionHooks
                     if (!BuildingActor->bIsInitiallyBuilding)
                         NewBuildingActor->ForceBuildingHealth(NewBuildingActor->GetMaxHealth() * HealthPercent);
                     NewBuildingActor->SetMirrored(Params->bMirrored);
+                    NewBuildingActor->Team = PlayerState->TeamIndex;
                     NewBuildingActor->InitializeKismetSpawnedBuildingActor(NewBuildingActor, PC);
                 }
             }
@@ -430,18 +432,6 @@ namespace UFunctionHooks
             if (Globals::bRespawnPlayers)
             {
                 auto SpawnLoc = DeadPC->Pawn->K2_GetActorLocation();
-                for (int i = 0; i < DeadPC->WorldInventory->Inventory.ItemInstances.Num(); i++)
-                {
-                    auto ItemInstance = DeadPC->WorldInventory->Inventory.ItemInstances[i];
-                    auto ItemDef = ItemInstance->ItemEntry.ItemDefinition;
-                    auto Count = ItemInstance->ItemEntry.Count;
-                    if (ItemDef->IsA(UFortWeaponMeleeItemDefinition::StaticClass()) || ItemDef->IsA(UFortBuildingItemDefinition::StaticClass()) || ItemDef->IsA(UFortEditToolItemDefinition::StaticClass()))
-                        continue;
-                    if (!ItemInstance || !ItemDef || !DeadPC->Pawn)
-                        continue;
-
-                    SummonPickup((AFortPlayerPawnAthena*)DeadPC->Pawn, ItemDef, Count, DeadPC->Pawn->K2_GetActorLocation());
-                }
                 DeadPawn->K2_DestroyActor();
                 InitPawn(DeadPC, FVector(SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z + 5000), FQuat(), false, false);
                 DeadPawn->SetHealth(100);
@@ -590,6 +580,7 @@ namespace UFunctionHooks
                     // ExitLocation.Z -= 500;
 
                     InitPawn(PC, ExitLocation, FQuat(), false, false);
+                    PC->ClientSetRotation(Params->ClientRotation, false);
                     PC->Pawn->bCanBeDamaged = true;
                     ((AAthena_GameState_C*)GetWorld()->AuthorityGameMode->GameState)->Aircrafts[0]->PlayEffectsForPlayerJumped();
                     PC->ActivateSlot(EFortQuickBars::Primary, 0, 0, true); // Select the pickaxe

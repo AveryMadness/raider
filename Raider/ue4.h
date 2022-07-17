@@ -17,6 +17,7 @@ static bool bRestart = false;
 static FVector BusLocation;
 
 static std::unordered_set<ABuildingSMActor*> Buildings;
+static TArray<ABuildingActor*> ExistingBuildings;
 static AFortOnlineBeaconHost* HostBeacon = nullptr;
 
 inline UWorld* GetWorld()
@@ -291,38 +292,29 @@ DWORD WINAPI SleepForGameEnd(LPVOID)
 
 bool CanBuild(ABuildingSMActor* BuildingActor)
 {
-    /*
-    FBuildingGridActorFilter filter { true, true, true, true};
-    FBuildingNeighboringActorInfo OutActors;
-    GameState->StructuralSupportSystem->K2_GetBuildingActorsInGridCell(Location, filter, &OutActors);
-    auto Amount = OutActors.NeighboringCenterCellInfos.Num() + OutActors.NeighboringFloorInfos.Num() + OutActors.NeighboringWallInfos.Num();
-    if (Amount == 0)
-        return true; */
+    bool bCanBuild = true;
 
-    for (const auto Building : Buildings)
+    for (int i = 0; i < ExistingBuildings.Num(); i++)
     {
-        if (!Building) // || Building->bDestroyed)
-        {
-            Buildings.erase(Building);
+        auto Building = ExistingBuildings[i];
+
+        if (!Building)
             continue;
-        }
 
-        if (Building->bDestroyed)
+        if (Building->K2_GetActorLocation() == BuildingActor->K2_GetActorLocation() && Building->BuildingType == BuildingActor->BuildingType)
         {
-            Buildings.erase(Building);
-            break;
-        }
-
-        if (Building->K2_GetActorLocation() == BuildingActor->K2_GetActorLocation()) // If we use a vector of locations, I do not know how to track if the actor has been destroyed. // Maybe we could use a map so we dont get the location everytime
-        {
-            // if (!BuildingClass->IsA(APBWA_W1_StairW_C::StaticClass()) || (BuildingClass->IsA(APBWA_W1_StairW_C::StaticClass()) && Building->BuildingType == EFortBuildingType::Stairs))
-            {
-                return false;
-            }
+            bCanBuild = false;
         }
     }
 
-    return true;
+    if (bCanBuild || ExistingBuildings.Num() == 0)
+    {
+        ExistingBuildings.Add(BuildingActor);
+
+        return true;
+    }
+
+    return false;
 }
 
 bool CanBuild2(ABuildingSMActor* BuildingActor)
@@ -370,8 +362,8 @@ void Spectate(UNetConnection* SpectatingConnection, AFortPlayerStateAthena* Stat
 
         auto SpectatorPC = SpawnActor<AFortPlayerControllerSpectating>(PawnToSpectate->K2_GetActorLocation());
         SpectatorPC->SetControlRotation(PawnToSpectate->K2_GetActorRotation());
-        SpectatorPC->SetNewCameraType(ESpectatorCameraType::DroneFollow, true);
-        SpectatorPC->CurrentCameraType = ESpectatorCameraType::DroneFollow;
+        SpectatorPC->SetNewCameraType(ESpectatorCameraType::Gameplay, true);
+        SpectatorPC->CurrentCameraType = ESpectatorCameraType::Gameplay;
         SpectatorPC->ResetCamera();
         SpectatingConnection->PlayerController = SpectatorPC;
         SpectatingConnection->ViewTarget = PawnToSpectate;
@@ -383,25 +375,6 @@ void Spectate(UNetConnection* SpectatingConnection, AFortPlayerStateAthena* Stat
         if (SpectatorPC->CurrentSpectatorCamComp)
             SpectatorPC->CurrentSpectatorCamComp->IntendedViewTarget = PawnToSpectate;
 
-        auto SpectatorPawn = SpawnActor<ABP_SpectatorPawn_C>(PawnToSpectate->K2_GetActorLocation(), PawnToSpectate);
-
-
-        if (SpectatorPawn->SpectatorCameraComponent)
-            SpectatorPawn->SpectatorCameraComponent->IntendedViewTarget = PawnToSpectate;
-
-        SpectatorPC->SpectatorPawn = SpectatorPawn;
-        SpectatorPC->Pawn = SpectatorPawn;
-        SpectatorPC->AcknowledgedPawn = SpectatorPawn;
-        SpectatorPawn->Owner = SpectatorPC;
-        SpectatorPawn->OnRep_Owner();
-        SpectatorPC->OnRep_Pawn();
-        SpectatorPC->Possess(SpectatorPawn);
-        DeadPC->K2_DestroyActor();
-        SpectatorPC->FollowPlayerByName(StateToSpectate->PlayerName);
-
-        SpectatorPC->Pawn->bUseControllerRotationPitch = true;
-        SpectatorPC->Pawn->bUseControllerRotationYaw = true;
-        SpectatorPC->Pawn->bUseControllerRotationRoll = true;
 
         if (DeadPC->QuickBars)
             DeadPC->QuickBars->K2_DestroyActor();
@@ -727,6 +700,12 @@ static void InitInventory(AFortPlayerController* PlayerController)
     // AddItem(PlayerController, Trap, 4, EFortQuickBars::Secondary, 1);
     // AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
     // AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
+    if (Globals::bRespawnPlayers)
+    {
+        AddItem(PlayerController, Wood, 0, EFortQuickBars::Secondary, 999);
+        AddItem(PlayerController, Stone, 0, EFortQuickBars::Secondary, 999);
+        AddItem(PlayerController, Metal, 0, EFortQuickBars::Secondary, 999);
+    }
 
 
     AddItemWithUpdate(PlayerController, EditTool, 0, EFortQuickBars::Primary, 1);
@@ -890,34 +869,6 @@ bool SetRespawnPlayers(bool bRespawnPlayers)
     }
 }
 
-void SummonWarmupFloorLoot()
-{
-    TArray<AActor*> WarmupFloorlootActors;
-    Globals::GameplayStatics->STATIC_GetAllActorsOfClass(GetWorld(), UObject::FindClass("Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C"), &WarmupFloorlootActors);
-    for (int i = 0; i < WarmupFloorlootActors.Num(); i++)
-    {
-        auto CastedActor = (ABuildingContainer*)WarmupFloorlootActors[i];
-        UFortWeaponItemDefinition* WeaponDef;
-        if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.39f))
-        {
-            WeaponDef = Utils::GetRandomUncommonWeaponDefinition();
-        }
-        else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.15f))
-            WeaponDef = Utils::GetRandomRareWeaponDefinition();
-        else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.02f))
-            WeaponDef = Utils::GetRandomEpicWeaponDefinition();
-        else if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.005f))
-            WeaponDef = Utils::GetRandomGoldWeaponDefinition();
-        else
-            WeaponDef = Utils::GetRandomCommonWeaponDefinition();
-        if (WeaponDef)
-        {
-        }
-        else
-            WeaponDef = (UFortWeaponItemDefinition*)Utils::GetRandomItemDefinition();
-        SpawnPickupFromFloorLoot(WeaponDef, 1, CastedActor->K2_GetActorLocation());
-    }
-}
 
 FTransform GetPlayerStart(AFortPlayerControllerAthena* PC)
 {
@@ -1080,6 +1031,7 @@ static void InitPawn(AFortPlayerControllerAthena* PlayerController, FVector Loc 
         }
 
         PlayerState->OnRep_CharacterParts();
+        PlayerState->OnRep_HeroType();
     }
 
 	
@@ -1543,7 +1495,7 @@ namespace Inventory // includes quickbars
                         Params->Pickup->OnRep_bPickedUp();
 
                         Instance->ItemEntry.LoadedAmmo = Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
-                        EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, true, entry.LoadedAmmo);
+						
 
                         Inventory::Update(Controller);
 
@@ -1741,14 +1693,14 @@ static bool RemoveBuildingAmount(UClass* BuildingClass, AFortPlayerControllerAth
             {
                 if (NewCount > 0)
                 {
-                    Inventory->Inventory.ReplicatedEntries[i].Count -= 10;
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= 5;
                     Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
 
                     for (int j = 0; j < Inventory->Inventory.ItemInstances.Num(); j++)
                     {
                         if (Inventory->Inventory.ItemInstances[j]->GetName().contains("Stone"))
                         {
-                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 10;
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 5;
                             Inventory->Inventory.ItemInstances[j]->ItemEntry.ReplicationKey++;
                         }
                     }
@@ -1767,14 +1719,14 @@ static bool RemoveBuildingAmount(UClass* BuildingClass, AFortPlayerControllerAth
                 if (NewCount > 0)
                 {
 
-                    Inventory->Inventory.ReplicatedEntries[i].Count -= 10;
+                    Inventory->Inventory.ReplicatedEntries[i].Count -= 5;
                     Inventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
 
                     for (int j = 0; j < Inventory->Inventory.ItemInstances.Num(); j++)
                     {
                         if (Inventory->Inventory.ItemInstances[j]->GetName().contains("Metal"))
                         {
-                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 10;
+                            Inventory->Inventory.ItemInstances[j]->ItemEntry.Count -= 5;
                             Inventory->Inventory.ItemInstances[j]->ItemEntry.ReplicationKey++;
                         }
                     }
@@ -1858,7 +1810,7 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             if (bSpawnWeapon)
             {
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
-                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), WeaponDef->GetAmmoWorldItemDefinition_BP()->DropCount);
                 Sleep(50);
                 continue;
             }
@@ -1912,7 +1864,7 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             if (bSpawnWeapon)
             {
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
-                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), 1);
+                SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), WeaponDef->GetAmmoWorldItemDefinition_BP()->DropCount);
                 Sleep(50);
                 continue;
             }
@@ -1955,7 +1907,6 @@ DWORD WINAPI MapLoadThread(LPVOID) // thnak you mr rythm for giving me this
    //     if (bSpawnedFloorLoot)
    //         break;
    // }
-    SummonFloorLoot(nullptr);
     Native::OnlineBeacon::PauseBeaconRequests(HostBeacon, false);
     std::cout << "People can join now!\n";
 

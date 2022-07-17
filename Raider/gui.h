@@ -72,6 +72,7 @@ namespace GUI
                         mtx.unlock();
 					}
 
+
 					if (ZeroGUI::Button(L"Spawn Husk", { 60.0f, 25.0f }))
                     {
                         auto PC = (AFortPlayerControllerAthena*)currentPlayer->Owner;

@@ -236,6 +236,7 @@ namespace Hooks
                 Pawn->CharacterGender = Hero->CharacterParts[1]->GenderPermitted;
                 PlayerState->OnRep_CharacterBodyType();
                 PlayerState->OnRep_CharacterParts();
+                PlayerState->OnRep_HeroType();
             }
         }
 
@@ -300,6 +301,7 @@ namespace Hooks
 
             Bunch[7] -= (16 * 1024 * 1024);
 
+			
             Native::World::WelcomePlayer(GetWorld(), Connection);
             return;
         }
@@ -425,10 +427,12 @@ namespace Hooks
               auto VendingMachine = (ABuildingItemCollectorActor*)ReceivingActor;
               auto Location = ReceivingActor->K2_GetActorLocation();
               VendingMachine->LootSpawnLocation = Location;
+              VendingMachine->LootSpawnLocation.X = VendingMachine->GetActorForwardVector().X + 10;
               VendingMachine->ItemCollections[0].OutputItem = (UFortWorldItemDefinition*)Utils::GetRandomItemDefinition();
               if (!VendingMachine->ItemCollections[0].OutputItem)
                   std::cout << "No input item" << std::endl;
-              Hooks::SpawnPickup(VendingMachine->LootSpawnLocation, VendingMachine->ItemCollections[0].OutputItem);
+              auto Pickup = SpawnPickup(VendingMachine->LootSpawnLocation, VendingMachine->ItemCollections[0].OutputItem);
+              
             }
 
             if (ReceivingActor && ReceivingActor->Class->GetName().contains("Tiered_Chest"))
@@ -491,6 +495,8 @@ namespace Hooks
 
                 auto WeaponDef = Utils::GetRandomGoldWeaponDefinition();
                 auto Pickup = Hooks::SpawnPickup(Location, WeaponDef);
+                
+				
 
                 SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
                 SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
@@ -521,6 +527,8 @@ namespace Hooks
             DetachNetworkHooks();
             GetKismetSystem()->STATIC_ExecuteConsoleCommand(GetWorld(), L"open frontend", GetPlayerController());
         }
+        
+       
 
         if (!bPlayButton)
         {
