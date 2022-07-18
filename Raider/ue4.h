@@ -15,6 +15,7 @@ inline bool bListening = false;
 static bool bSpawnedFloorLoot = false;
 static bool bRestart = false;
 static FVector BusLocation;
+int PlayersJumpedFromBus = 0;
 
 static std::unordered_set<ABuildingSMActor*> Buildings;
 static TArray<ABuildingActor*> ExistingBuildings;

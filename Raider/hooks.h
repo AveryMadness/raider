@@ -509,9 +509,36 @@ namespace Hooks
             }
         }
 
-        if (FuncName == "ServerHandlePickup")
+        if (Function->GetFullName() == "Function SafeZoneIndicator.SafeZoneIndicator_C.OnSafeZoneStateChange" && bLateGame)
         {
-            
+            auto Indicator = (ASafeZoneIndicator_C*)Object;
+            auto SafeZonePhase = ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->SafeZonePhase;
+            auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+            Indicator->NextCenter = (FVector_NetQuantize100)BusLocation;
+
+            switch (SafeZonePhase)
+            {
+            case 0:
+
+                Indicator->Radius = 15000;
+                Indicator->NextRadius = 11000;
+                break;
+            case 1:
+                Indicator->NextRadius = 7000;
+                break;
+            case 2:
+                Indicator->NextRadius = 4000;
+                break;
+            case 3:
+                Indicator->NextRadius = 1000;
+                break;
+            case 4:
+                Indicator->NextRadius = 500;
+                break;
+            default:
+                Indicator->NextRadius = 50;
+                break;
+            }
         }	
 
         if (Function->GetName().find("Tick") != std::string::npos && bRestart)
@@ -522,6 +549,7 @@ namespace Hooks
             bListening = false;
             bSpawnedFloorLoot = false;
             bStartedBus = false;
+            PlayersJumpedFromBus = 0;
             HostBeacon = nullptr;
             ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->bSafeZonePaused = false;
             DetachNetworkHooks();

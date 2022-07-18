@@ -580,6 +580,7 @@ namespace UFunctionHooks
                     // ExitLocation.Z -= 500;
 
                     InitPawn(PC, ExitLocation, FQuat(), false, false);
+                    PlayersJumpedFromBus++;
                     PC->ClientSetRotation(Params->ClientRotation, false);
                     PC->Pawn->bCanBeDamaged = true;
                     ((AAthena_GameState_C*)GetWorld()->AuthorityGameMode->GameState)->Aircrafts[0]->PlayEffectsForPlayerJumped();
@@ -590,7 +591,11 @@ namespace UFunctionHooks
 
                     if (bFound)
                         EquipInventoryItem(PC, PickaxeEntry.ItemGuid);
-
+                    if (PlayersJumpedFromBus >= GameState->PlayerArray.Num() && bLateGame)
+                    {
+                        ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->OnAircraftExitedDropZone(GameState->GetAircraft(0));
+                        GameState->SafeZonesStartTime -= 59;
+                    }
                     // PC->Pawn->K2_TeleportTo(ExitLocation, Params->ClientRotation);
                 }
             }
