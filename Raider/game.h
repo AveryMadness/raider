@@ -16,11 +16,13 @@ namespace Game
         Globals::bDBNO = false;
         Globals::bFriendlyFire = true;
         Globals::bLargeTeamGame = false;
-        Globals::bRespawnPlayers = false;
+        Globals::bRespawnPlayers = true;
         Globals::MaxHealth = 100;
         Globals::MaxShield = 100;
         Globals::bSoloGame = true;
+        Globals::bLateGame = true;
         bool ACEnabled = false;
+        Globals::DebugRespawn = false;
 		
         auto GameState = reinterpret_cast<AAthena_GameState_C*>(GetWorld()->GameState);
         auto GameMode = reinterpret_cast<AAthena_GameMode_C*>(GetWorld()->AuthorityGameMode);
@@ -42,9 +44,8 @@ namespace Game
 
         GameMode->MatchState = InProgress;
         GameMode->K2_OnSetMatchState(InProgress);
-        GameState->ServerToClientPreloadList.Add(UObject::FindObject<APawn>("HuskPawn.HuskPawn_C"));
 
-        auto Playlist = SoloPlaylist;
+        auto Playlist = PlaygroundList;
 
         if (Playlist)
         {

@@ -4,7 +4,7 @@
 #include <format>
 #include <mutex>
 
-static bool bLateGame = false;
+static bool bLateGame = true;
 static bool bStartedBus = false;
 static bool bSafeZoneEnabled = true;
 

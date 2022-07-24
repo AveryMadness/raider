@@ -3,6 +3,10 @@
 #include "Logger.hpp"
 #include <map>
 
+constexpr auto PI = 3.1415926535897932f;
+constexpr auto INV_PI = 0.31830988618f;
+constexpr auto HALF_PI = 1.57079632679f;
+
 static void Error(std::string error, bool bExit = false)
 {
     // MessageBoxA(nullptr, error.c_str(), "Error", MB_OK | MB_ICONERROR);
@@ -156,6 +160,43 @@ namespace Utils
         return f > s ? f : s;
     }
 
+    static FORCEINLINE void sinCos(float* ScalarSin, float* ScalarCos, float Value)
+    {
+        float quotient = (INV_PI * 0.5f) * Value;
+        if (Value >= 0.0f)
+        {
+            quotient = static_cast<float>(static_cast<int>(quotient + 0.5f));
+        }
+        else
+        {
+            quotient = static_cast<float>(static_cast<int>(quotient - 0.5f));
+        }
+        float y = Value - (2.0f * PI) * quotient;
+
+        float sign;
+        if (y > HALF_PI)
+        {
+            y = PI - y;
+            sign = -1.0f;
+        }
+        else if (y < -HALF_PI)
+        {
+            y = -PI - y;
+            sign = -1.0f;
+        }
+        else
+        {
+            sign = +1.0f;
+        }
+
+        float y2 = y * y;
+
+        *ScalarSin = (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.0f) * y;
+
+        float p = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.0f;
+        *ScalarCos = sign * p;
+    }
+
     std::vector<std::string> AthenaConsumables = {
         "/Game/Athena/Items/Consumables/Shields/Athena_Shields.Athena_Shields",
         "/Game/Athena/Items/Consumables/ShieldSmall/Athena_ShieldSmall.Athena_ShieldSmall",
@@ -180,8 +221,10 @@ namespace Utils
         "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_C_Ore_T02.WID_Assault_SemiAuto_Athena_C_Ore_T02",
         "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_UC_Ore_T03.WID_Assault_SemiAuto_Athena_UC_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Assault_SemiAuto_Athena_R_Ore_T03.WID_Assault_SemiAuto_Athena_R_Ore_T03",
-        "/Game/Athena/Items/Weapons/WID_Assault_LMG_Athena_VR_Ore_T03.WID_Assault_LMG_Athena_VR_Ore_T03",
-        "/Game/Athena/Items/Weapons/WID_Assault_LMG_Athena_SR_Ore_T03.WID_Assault_LMG_Athena_SR_Ore_T03"
+        "/Game/Athena/Items/Weapons/WID_Assault_LMGSAW_Athena_R_Ore_T03.WID_Assault_LMGSAW_Athena_R_Ore_T03",
+		"/Game/Athena/Items/Weapons/WID_Assault_LMGSAW_Athena_VR_Ore_T03.WID_Assault_LMGSAW_Athena_VR_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Assault_Surgical_Athena_R_Ore_T03.WID_Assault_Surgical_Athena_R_Ore_T03",
+		"/Game/Athena/Items/Weapons/WID_Assault_Surgical_Athena_VR_Ore_T03.WID_Assault_Surgical_Athena_VR_Ore_T03",
     };
 
     std::vector<std::string> AthenaShotgunLootPool = {
@@ -200,7 +243,11 @@ namespace Utils
         "/Game/Athena/Items/Weapons/WID_Pistol_Scavenger_Athena_VR_Ore_T03.WID_Pistol_Scavenger_Athena_VR_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavy_Athena_C_Ore_T02.WID_Pistol_AutoHeavy_Athena_C_Ore_T02",
         "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavy_Athena_UC_Ore_T03.WID_Pistol_AutoHeavy_Athena_UC_Ore_T03",
-        "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavy_Athena_R_Ore_T03.WID_Pistol_AutoHeavy_Athena_R_Ore_T03"
+        "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavy_Athena_R_Ore_T03.WID_Pistol_AutoHeavy_Athena_R_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavySuppressed_Athena_C_Ore_T02.WID_Pistol_AutoHeavySuppressed_Athena_C_Ore_T02",
+		"/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavySuppressed_Athena_UC_Ore_T03.WID_Pistol_AutoHeavySuppressed_Athena_UC_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Pistol_AutoHeavySuppressed_Athena_R_Ore_T03.WID_Pistol_AutoHeavySuppressed_Athena_R_Ore_T03",
+
     };
 
     std::vector<std::string> AthenaPistolLootPool = {
@@ -221,7 +268,10 @@ namespace Utils
         "/Game/Athena/Items/Weapons/WID_Sniper_Standard_Scope_Athena_VR_Ore_T03.WID_Sniper_Standard_Scope_Athena_VR_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Sniper_Standard_Scope_Athena_SR_Ore_T03.WID_Sniper_Standard_Scope_Athena_SR_Ore_T03",
         "/Game/Athena/Items/Weapons/WID_Pistol_HandCannon_Athena_VR_Ore_T03.WID_Pistol_HandCannon_Athena_VR_Ore_T03",
-        "/Game/Athena/Items/Weapons/WID_Pistol_HandCannon_Athena_SR_Ore_T03.WID_Pistol_HandCannon_Athena_SR_Ore_T03"
+        "/Game/Athena/Items/Weapons/WID_Pistol_HandCannon_Athena_SR_Ore_T03.WID_Pistol_HandCannon_Athena_SR_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Sniper_AMR_Athena_SR_Ore_T03.WID_Sniper_AMR_Athena_SR_Ore_T03",
+        "/Game/Athena/Items/Weapons/WID_Sniper_NoScope_Athena_R_Ore_T03.WID_Sniper_NoScope_Athena_R_Ore_T03",
+		"/Game/Athena/Items/Weapons/WID_Sniper_NoScope_Athena_UC_Ore_T03.WID_Sniper_NoScope_Athena_UC_Ore_T03",
     };
 
     std::vector<std::string> AthenaRocketLootPool = {
@@ -295,6 +345,13 @@ namespace Utils
         "/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy"
     };
 
+    std::vector<std::string> TrapPool = {
+        "/Game/Athena/Items/Traps/TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena",
+        "/Game/Athena/Items/Traps/TID_Wall_Electric_Athena_R_T03.TID_Wall_Electric_Athena_R_T03",
+        "/Game/Athena/Items/Traps/TID_Floor_Spikes_Athena_R_T03.TID_Floor_Spikes_Athena_R_T03",
+        "/Game/Athena/Items/Traps/TID_Floor_Player_Campfire_Athena.TID_Floor_Player_Campfire_Athena"
+    };
+
     std::vector<std::string> PickaxePool = {
         "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_Anchor_Athena.WID_Harvest_Pickaxe_Anchor_Athena",
         "/Game/Athena/Items/Weapons/WID_Harvest_Pickaxe_ArtDeco.WID_Harvest_Pickaxe_ArtDeco",
@@ -356,6 +413,21 @@ namespace Utils
         }
     }
 
+    static UFortTrapItemDefinition* GetRandomTrap()
+    {
+        while (true)
+        {
+            auto Idx = Globals::MathLibrary->STATIC_RandomInteger(TrapPool.size());
+            auto Item = TrapPool[Idx];
+            auto Def = Utils::FindObjectFast<UFortTrapItemDefinition>(Item);
+            if (!Def)
+                continue;
+			auto rng = std::default_random_engine {};
+			std::shuffle(TrapPool.begin(), TrapPool.end(), rng);
+			return Def;
+        }
+    }
+
     static UFortItemDefinition* GetRandomItemDefinition()
     {
         while (true)
@@ -397,6 +469,23 @@ namespace Utils
         if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.07))
             return AthenaRocketLootPool;
         return AthenaAssaultLootPool;
+    }
+
+    static UFortWeaponItemDefinition* GetRandomWeaponDefinition(std::vector<std::string> LootTable)
+    {
+        while (true)
+        {
+            auto LootPool = LootTable;
+            auto Idx = Globals::MathLibrary->STATIC_RandomInteger(LootPool.size());
+            auto Item = LootPool[Idx];
+            auto Def = Utils::FindObjectFast<UFortWeaponItemDefinition>(Item);
+            if (!Def)
+                continue;
+
+            auto rng = std::default_random_engine {};
+            std::shuffle(LootPool.begin(), LootPool.end(), rng);
+            return Def;
+        }
     }
     
 
@@ -548,6 +637,26 @@ namespace Utils
             std::shuffle(AmmoPool.begin(), AmmoPool.end(), rng);
             return Def;
         }
+    }
+
+    static auto RotToQuat(FRotator Rotator)
+    {
+        const float DEG_TO_RAD = PI / (180.f);
+        const float DIVIDE_BY_2 = DEG_TO_RAD / 2.f;
+        float SP, SY, SR;
+        float CP, CY, CR;
+
+        sinCos(&SP, &CP, Rotator.Pitch * DIVIDE_BY_2);
+        sinCos(&SY, &CY, Rotator.Yaw * DIVIDE_BY_2);
+        sinCos(&SR, &CR, Rotator.Roll * DIVIDE_BY_2);
+
+        FQuat RotationQuat;
+        RotationQuat.X = CR * SP * SY - SR * CP * CY;
+        RotationQuat.Y = -CR * SP * CY - SR * CP * SY;
+        RotationQuat.Z = CR * CP * SY - SR * SP * CY;
+        RotationQuat.W = CR * CP * CY + SR * SP * SY;
+
+        return RotationQuat;
     }
 
     auto GetDeathCause(FFortPlayerDeathReport DeathReport)

@@ -131,6 +131,24 @@ namespace Replication
         }
     }
 
+	static bool GetRelevancy(AActor* Actor)
+    {
+            if (Actor->bAlwaysRelevant)
+                return true;
+            if (Actor->Owner->IsA(APlayerController::StaticClass()) || Actor->Owner->IsA(APawn::StaticClass()))
+                return true;
+            if (Actor->bNetUseOwnerRelevancy)
+            {
+                if (Actor->Owner)
+                    return GetRelevancy(Actor->Owner);
+            }
+            if (Actor->bHidden)
+                return false;
+            if (Actor->NetCullDistanceSquared <= GetWorld()->NetworkManager->NetCullDistanceSquared)
+                return true;
+            return false;
+    }
+
     void BuildConsiderList(UNetDriver* NetDriver, std::vector<AActor*>& OutConsiderList)
     {
         static auto World = NetDriver->World;
@@ -149,6 +167,10 @@ namespace Replication
 
             if (Actor->NetDormancy == ENetDormancy::DORM_Initial && Actor->bNetStartup)
                 continue;
+            
+            //if (!GetRelevancy(Actor))
+              // continue;
+				
 
             if (Actor->Name.ComparisonIndex != 0)
             {

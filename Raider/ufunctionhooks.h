@@ -205,7 +205,7 @@ namespace UFunctionHooks
         if (PC && Params && CurrentBuildClass)
         {
             {
-                if (Globals::bRespawnPlayers)
+                if (Globals::bRespawnPlayers || ((AAthena_GameState_C*)GetWorld()->AuthorityGameMode->GameState)->GamePhase == EAthenaGamePhase::Warmup)
                 {
                     auto BuildingActor = (ABuildingSMActor*)SpawnActor(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, PC, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
                     // SpawnBuilding(CurrentBuildClass, Params->BuildLoc, Params->BuildRot, (APlayerPawn_Athena_C*)PC->Pawn);
@@ -403,13 +403,15 @@ namespace UFunctionHooks
         return false;
         })
 
+        
+
         DEFINE_PEHOOK("Function FortniteGame.FortPlayerControllerZone.ClientOnPawnDied", {
         auto CurrentParams = (AFortPlayerControllerZone_ClientOnPawnDied_Params*)Parameters;
         auto DeadPC = (AFortPlayerControllerAthena*)Object;
         auto DeadPlayerState = (AFortPlayerStateAthena*)DeadPC->PlayerState;
         auto DeadPawn = (APlayerPawn_Athena_C*)DeadPC->Pawn;
         auto GameMode = (AAthena_GameMode_C*)GetWorld()->AuthorityGameMode;
-        if (DeadPC && DeadPC->NetConnection)
+        if (DeadPC->NetConnection)
         {
 
             FDeathInfo DeathData;
@@ -429,7 +431,7 @@ namespace UFunctionHooks
                 ((AFortPlayerStateAthena*)CurrentParams->DeathReport.KillerPlayerState)->OnRep_Score();
             }
 
-            if (Globals::bRespawnPlayers)
+            if (Globals::bRespawnPlayers || Globals::DebugRespawn)
             {
                 auto SpawnLoc = DeadPC->Pawn->K2_GetActorLocation();
                 DeadPawn->K2_DestroyActor();
@@ -464,6 +466,9 @@ namespace UFunctionHooks
 
             auto GameState = reinterpret_cast<AAthena_GameState_C*>(GetWorld()->GameState);
             GameState->PlayersLeft--;
+            GameState->TotalPlayers--;
+            if (GameState->PlayersLeft != GameState->TotalPlayers)
+                GameState->PlayersLeft = GameState->TotalPlayers;
             LOG_INFO("Subtracted Player Count!")
             GameState->OnRep_PlayersLeft();
             if (((AFortPlayerStateAthena*)CurrentParams->DeathReport.KillerPlayerState))
@@ -512,9 +517,7 @@ namespace UFunctionHooks
 
             // CreateThread(0, 0, RespawnPlayerThread, &Params, 0, nullptr);
         }
-        else
-        {
-        }
+       
 
         return false;
         })
@@ -558,12 +561,6 @@ namespace UFunctionHooks
         return false;
         })
 
-
-        
-            
-      
-
-
         DEFINE_PEHOOK("Function FortniteGame.FortPlayerControllerAthena.ServerAttemptAircraftJump", {
             auto Params = (AFortPlayerControllerAthena_ServerAttemptAircraftJump_Params*)Parameters;
             auto PC = (AFortPlayerControllerAthena*)Object;
@@ -591,6 +588,21 @@ namespace UFunctionHooks
 
                     if (bFound)
                         EquipInventoryItem(PC, PickaxeEntry.ItemGuid);
+                    if (bLateGame)
+                    {
+                       
+                        FFortItemEntry ItemEntry = AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaAssaultLootPool), 1, EFortQuickBars::Primary, 1);
+                        EquipWeaponDefinition(PC->Pawn, (UFortWeaponItemDefinition*)ItemEntry.ItemDefinition, ItemEntry.ItemGuid, -1, true);
+                        AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaAssaultLootPool)->GetAmmoWorldItemDefinition_BP(), 0, EFortQuickBars::Secondary, 500);
+                        ItemEntry = AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaShotgunLootPool), 2, EFortQuickBars::Primary, 1);
+                        EquipWeaponDefinition(PC->Pawn, (UFortWeaponItemDefinition*)ItemEntry.ItemDefinition, ItemEntry.ItemGuid, -1, true);
+                        AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaShotgunLootPool)->GetAmmoWorldItemDefinition_BP(), 0, EFortQuickBars::Secondary, 500);
+                        ItemEntry = AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaSmgLootPool), 3, EFortQuickBars::Primary, 1);
+                        EquipWeaponDefinition(PC->Pawn, (UFortWeaponItemDefinition*)ItemEntry.ItemDefinition, ItemEntry.ItemGuid, -1, true);
+                        AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaSmgLootPool)->GetAmmoWorldItemDefinition_BP(), 0, EFortQuickBars::Secondary, 500);
+                        AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 4, EFortQuickBars::Primary, 5);
+                        AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 5, EFortQuickBars::Primary, 5);
+                    }
                     if (PlayersJumpedFromBus >= GameState->PlayerArray.Num() && bLateGame)
                     {
                         ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->OnAircraftExitedDropZone(GameState->GetAircraft(0));
@@ -867,7 +879,18 @@ namespace UFunctionHooks
                         Inventory::RemoveItemFromSlot(Controller, 3, EFortQuickBars::Primary, -1);
                         Inventory::RemoveItemFromSlot(Controller, 2, EFortQuickBars::Primary, -1);
                         Inventory::RemoveItemFromSlot(Controller, 1, EFortQuickBars::Primary, -1);
+                        auto Inventory = Controller->WorldInventory;
 
+                        for (int i = Inventory->Inventory.ItemInstances.Num() - 1; i >= 0; i--)
+						{
+							auto Item = Inventory->Inventory.ItemInstances[i];
+							if (Item->ItemEntry.ItemDefinition->IsA(UFortResourceItemDefinition::StaticClass()) || Item->ItemEntry.ItemDefinition->IsA(UFortAmmoItemDefinition::StaticClass()))
+							{
+								Inventory::RemoveItemFromSlot(Controller, i, EFortQuickBars::Secondary);
+                                Inventory::Update(Controller, 0, true);
+							}
+						}
+                        
                     }
                 }
 

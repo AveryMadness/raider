@@ -13484,7 +13484,7 @@ public:
 	struct FGuid                                       OptionalMissionGuid;                                      // 0x048C(0x0010) (Transient, IsPlainOldData)
 	unsigned char                                      UnknownData03[0x4];                                       // 0x049C(0x0004) MISSED OFFSET
 	class UFortItem*                                   PrimaryPickupDummyItem;                                   // 0x04A0(0x0008) (BlueprintVisible, BlueprintReadOnly, ZeroConstructor, Transient, IsPlainOldData)
-	TWeakObjectPtr<class AFortPickupEffect>            PickupEffectBlueprint;                                    // 0x04A8(0x0008) (ZeroConstructor, Transient, IsPlainOldData)
+	class AFortPickupEffect*								   PickupEffectBlueprint;                                    // 0x04A8(0x0008) (ZeroConstructor, Transient, IsPlainOldData)
 	class UCapsuleComponent*                           TouchCapsule;                                             // 0x04B0(0x0008) (ExportObject, ZeroConstructor, InstancedReference, IsPlainOldData)
 	class UProjectileMovementComponent*                MovementComponent;                                        // 0x04B8(0x0008) (ExportObject, ZeroConstructor, Transient, InstancedReference, IsPlainOldData)
 	bool                                               bPickedUp;                                                // 0x04C0(0x0001) (Net, ZeroConstructor, Transient, IsPlainOldData)

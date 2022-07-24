@@ -5,9 +5,6 @@
 
 #include "native.h"
 
-constexpr auto PI = 3.1415926535897932f;
-constexpr auto INV_PI = 0.31830988618f;
-constexpr auto HALF_PI = 1.57079632679f;
 
 inline bool bTraveled = false;
 inline bool bPlayButton = false;
@@ -323,7 +320,8 @@ bool CanBuild2(ABuildingSMActor* BuildingActor)
     static auto GameState = reinterpret_cast<AAthena_GameState_C*>(GetWorld()->GameState);
 
     TArray<ABuildingActor*> ExistingBuildings;
-    EFortStructuralGridQueryResults bCanBuild = GameState->StructuralSupportSystem->K2_CanAddBuildingActorToGrid(GetWorld(), BuildingActor, BuildingActor->K2_GetActorLocation(), BuildingActor->K2_GetActorRotation(), false, false, &ExistingBuildings);
+    EFortStructuralGridQueryResults bCanBuild;
+    bCanBuild = GameState->StructuralSupportSystem->K2_CanAddBuildingActorToGrid(GetWorld(), BuildingActor, BuildingActor->K2_GetActorLocation(), BuildingActor->K2_GetActorRotation(), false, false, &ExistingBuildings);
 
 	if (bCanBuild == EFortStructuralGridQueryResults::CanAdd || ExistingBuildings.Num() == 0)
         return true;
@@ -360,22 +358,6 @@ void Spectate(UNetConnection* SpectatingConnection, AFortPlayerStateAthena* Stat
         DeadPlayerState->OnRep_SpectatingTarget();
 
         // 95% of the code below here is useless, it was my attempt to fix the camera.
-
-        auto SpectatorPC = SpawnActor<AFortPlayerControllerSpectating>(PawnToSpectate->K2_GetActorLocation());
-        SpectatorPC->SetControlRotation(PawnToSpectate->K2_GetActorRotation());
-        SpectatorPC->SetNewCameraType(ESpectatorCameraType::Gameplay, true);
-        SpectatorPC->CurrentCameraType = ESpectatorCameraType::Gameplay;
-        SpectatorPC->ResetCamera();
-        SpectatingConnection->PlayerController = SpectatorPC;
-        SpectatingConnection->ViewTarget = PawnToSpectate;
-        SpectatorPC->SetFollowedPlayer(StateToSpectate, false);
-        SpectatorPC->FollowedPlayerPrivate = StateToSpectate;
-        SpectatorPC->HoveredPlayerPrivate = StateToSpectate;
-        SpectatorPC->ToggleSpectatorHUD();
-
-        if (SpectatorPC->CurrentSpectatorCamComp)
-            SpectatorPC->CurrentSpectatorCamComp->IntendedViewTarget = PawnToSpectate;
-
 
         if (DeadPC->QuickBars)
             DeadPC->QuickBars->K2_DestroyActor();
@@ -687,10 +669,11 @@ static void InitInventory(AFortPlayerController* PlayerController)
     static auto Shells = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataShells.AthenaAmmoDataShells");
     static auto Rockets = UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataRockets.AthenaAmmoDataRockets");
     static auto EditTool = UObject::FindObject<UFortEditToolItemDefinition>("FortEditToolItemDefinition EditTool.EditTool");
-    static auto Launch = Utils::FindObjectFast<UFortWorldItemDefinition>("/Game/Athena/Items/Traps/TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena");
-    // static auto Trap = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena");
-    // static auto Trap2 = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Wall_Electric_Athena_R_T03.TID_Wall_Electric_Athena_R_T03");
-    // static auto Trap3 = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Spikes_Athena_R_T03.TID_Floor_Spikes_Athena_R_T03");
+    static auto Launch = Utils::FindObjectFast<UFortWorldItemDefinition>("FortWorldItemDefinition TID_Floor_Player_Launch_Pad_Athena");
+    static auto Trap = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Player_Launch_Pad_Athena.TID_Floor_Player_Launch_Pad_Athena");
+    static auto Trap2 = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Wall_Electric_Athena_R_T03.TID_Wall_Electric_Athena_R_T03");
+    static auto Trap3 = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Spikes_Athena_R_T03.TID_Floor_Spikes_Athena_R_T03");
+    static auto Trap4 = UObject::FindObject<UFortTrapItemDefinition>("FortTrapItemDefinition TID_Floor_Player_Campfire_Athena.TID_Floor_Player_Campfire_Athena");
 
     // we should probably only update once
 
@@ -698,14 +681,16 @@ static void InitInventory(AFortPlayerController* PlayerController)
     AddItem(PlayerController, Floor, 1, EFortQuickBars::Secondary, 1);
     AddItem(PlayerController, Stair, 2, EFortQuickBars::Secondary, 1);
     AddItem(PlayerController, Cone, 3, EFortQuickBars::Secondary, 1);
-    // AddItem(PlayerController, Trap, 4, EFortQuickBars::Secondary, 1);
-    // AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
-    // AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
-    if (Globals::bRespawnPlayers)
+   
+    if (Globals::bRespawnPlayers || Globals::bLateGame)
     {
         AddItem(PlayerController, Wood, 0, EFortQuickBars::Secondary, 999);
         AddItem(PlayerController, Stone, 0, EFortQuickBars::Secondary, 999);
         AddItem(PlayerController, Metal, 0, EFortQuickBars::Secondary, 999);
+        AddItem(PlayerController, Trap, 4, EFortQuickBars::Secondary, 1);
+        AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
+        AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
+        AddItem(PlayerController, Trap4, 7, EFortQuickBars::Secondary, 1);
     }
 
 
@@ -1119,6 +1104,8 @@ auto GetRandomWID(int skip = 0)
 
 
 
+
+
 namespace Inventory // includes quickbars
 {
     // todo?: choose a quickbar to update
@@ -1476,18 +1463,23 @@ namespace Inventory // includes quickbars
                                 if (FocusedGuid == Guid)
                                 {
                                     // if (Params->Pickup->MultiItemPickupEntries)
-                                    SummonPickup((APlayerPawn_Athena_C*)Controller->Pawn, Def, 1 /* ItemInstance->ItemEntry.Count */, Controller->Pawn->K2_GetActorLocation());
+                                    SummonPickup((APlayerPawn_Athena_C*)Controller->Pawn, Def, ItemInstance->ItemEntry.Count, Controller->Pawn->K2_GetActorLocation());
+                                    
                                     break;
                                 }
                             }
 
                             Inventory::RemoveItemFromSlot(Controller, FocusedSlot, EFortQuickBars::Primary);
+                            UpdateInventory(Controller, 0, true);
                         }
 
                         int Idx = 0;
                         auto entry = Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Primary, Params->Pickup->PrimaryPickupItemEntry.Count, &Idx);
+						entry.LoadedAmmo = Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
                         auto PickupSound = Utils::FindObjectFast<USoundBase>("/Game/Sounds/Fort_GamePlay_Sounds/Loot/AR_Pickup_Cue.AR_Pickup_Cue");
                         Controller->ClientPlaySoundAtLocation(PickupSound, Controller->Pawn->K2_GetActorLocation(), 1, 1);
+                        if (WorldItemDefinition->IsA(UFortWeaponItemDefinition::StaticClass()))
+                            EquipWeaponDefinition(Controller->Pawn, (UFortWeaponItemDefinition*)WorldItemDefinition, entry.ItemGuid, -1, true);
                         // auto& Entry = Controller->WorldInventory->Inventory.ReplicatedEntries[Idx];
                         auto Instance = GetInstanceFromGuid(Controller, entry.ItemGuid);
                         Params->Pickup->K2_DestroyActor();
@@ -1495,7 +1487,6 @@ namespace Inventory // includes quickbars
                         Params->Pickup->bPickedUp = true;
                         Params->Pickup->OnRep_bPickedUp();
 
-                        Instance->ItemEntry.LoadedAmmo = Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
 						
 
                         Inventory::Update(Controller);
@@ -1519,6 +1510,12 @@ namespace Inventory // includes quickbars
                         Instance->ItemEntry.LoadedAmmo += Params->Pickup->PrimaryPickupItemEntry.LoadedAmmo;
                         int Count = Instance->ItemEntry.Count + Params->Pickup->PrimaryPickupItemEntry.Count;
                         Instance->ItemEntry.Count = Count;
+                        if (Count > Instance->GetItemDefinitionBP()->MaxStackSize)
+                        {
+                            SummonPickup(((AFortPlayerPawn*)Controller->Pawn), Instance->GetItemDefinitionBP(), Count - Instance->GetItemDefinitionBP()->MaxStackSize, Controller->Pawn->K2_GetActorLocation());
+							Instance->ItemEntry.Count = Instance->GetItemDefinitionBP()->MaxStackSize;
+                            Inventory::Update(Controller, 0, true);
+                        }
 
                         Controller->WorldInventory->Inventory.ReplicatedEntries.RemoveAt(i);
                         Controller->WorldInventory->Inventory.ItemInstances.RemoveAt(i);
@@ -1585,52 +1582,50 @@ void EquipTrapTool(AController* Controller)
     }
 }
 
-void SpawnDeco(AFortDecoTool* Tool, void* _Params)
+static void SpawnDeco(AFortDecoTool* Tool, void* _Params)
 {
     if (!_Params)
         return;
 
-	auto Params = (AFortDecoTool_ServerSpawnDeco_Params*)_Params;
+    auto Params = static_cast<AFortDecoTool_ServerSpawnDeco_Params*>(_Params);
 
-	FTransform Transform {};
+    FTransform Transform {};
     Transform.Scale3D = FVector(1, 1, 1);
-    Transform.Rotation = RotToQuat(Params->Rotation);
+    Transform.Rotation = Utils::RotToQuat(Params->Rotation);
     Transform.Translation = Params->Location;
 
-    // if (Params->AttachedActor->IsA(ABuildingTrap::StaticClass()))
+    auto TrapDef = static_cast<UFortTrapItemDefinition*>(Tool->ItemDefinition);
+
+    if (TrapDef)
     {
-        // auto Trap = (ABuildingTrap*)Params->AttachedActor;
+        auto Trap = static_cast<ABuildingTrap*>(SpawnActorTrans(TrapDef->GetBlueprintClass(), Transform));
 
-        auto TrapDef = (UFortTrapItemDefinition*)Tool->ItemDefinition;
-
-        if (TrapDef)
+        if (Trap)
         {
-            auto Trap = (ABuildingTrap*)SpawnActorTrans(TrapDef->GetBlueprintClass(), Transform);
+            Trap->TrapData = TrapDef;
 
-            if (Trap)
+            auto Pawn = static_cast<APlayerPawn_Athena_C*>(Tool->Owner);
+
+            Trap->InitializeKismetSpawnedBuildingActor(Trap, static_cast<AFortPlayerController*>(Pawn->Controller));
+
+            Trap->AttachedTo = Params->AttachedActor;
+            Trap->OnRep_AttachedTo();
+
+            auto PlayerState = (AFortPlayerStateAthena*)Pawn->Controller->PlayerState;
+            Trap->Team = PlayerState->TeamIndex;
+
+            auto TrapAbilitySet = Trap->AbilitySet;
+
+            for (int i = 0; i < TrapAbilitySet->GameplayAbilities.Num(); i++) // this fixes traps crashing the game // don't ask how
             {
-                Trap->TrapData = TrapDef;
+                auto Ability = TrapAbilitySet->GameplayAbilities[i];
 
-                auto Pawn = (APlayerPawn_Athena_C*)Tool->Owner;
+                if (!Ability)
+                    continue;
 
-                Trap->InitializeKismetSpawnedBuildingActor(Trap, (AFortPlayerController*)Pawn->Controller);
-
-				Trap->AttachedTo = Params->AttachedActor;
-                Trap->OnRep_AttachedTo();
-
-				auto TrapAbilitySet = Trap->AbilitySet;
-
-				for (int i = 0; i < TrapAbilitySet->GameplayAbilities.Num(); i++) // this fixes traps crashing the game // don't ask how
-                {
-                    auto Ability = TrapAbilitySet->GameplayAbilities[i];
-
-                    if (!Ability)
-                        continue;
-
-                    GrantGameplayAbility(Pawn, Ability);
-                }
-            }			
-        }	
+                GrantGameplayAbility(Pawn, Ability);
+            }
+        }
     }
 }
 
@@ -1661,7 +1656,7 @@ static bool RemoveBuildingAmount(UClass* BuildingClass, AFortPlayerControllerAth
     {
         if (Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("ItemData"))
         {
-            int NewCount = Inventory->Inventory.ReplicatedEntries[i].Count - 10;
+            int NewCount = Inventory->Inventory.ReplicatedEntries[i].Count - 5 + Inventory->Inventory.ItemInstances[i]->ItemEntry.Count - 5;
 
             if (BuildingClass->GetName().contains("W1") && Inventory->Inventory.ReplicatedEntries[i].ItemDefinition->GetName().contains("Wood"))
             {
@@ -1754,13 +1749,17 @@ static AFortPickupAthena* SpawnPickup(FVector Location, UFortItemDefinition* Ite
     Transform.Translation = Location; // Next to salty
 
     auto Pickup = (AFortPickupAthena*)SpawnActorTrans(AFortPickupAthena::StaticClass(), Transform, nullptr);
+    if (Pickup)
+    {
 
-    Pickup->PrimaryPickupItemEntry.ItemDefinition = ItemDef;
-    Pickup->PrimaryPickupItemEntry.Count = Count;
+        Pickup->PrimaryPickupItemEntry.ItemDefinition = ItemDef;
+        Pickup->PrimaryPickupItemEntry.Count = Count;
 
-    Pickup->TossPickup(Location, nullptr, 6, true);
+        Pickup->TossPickup(Location, nullptr, 6, true);
 
-    return Pickup;
+        return Pickup;
+    }
+    return nullptr;
 }
 
 
@@ -1803,6 +1802,7 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             auto Location = FloorLootActor->K2_GetActorLocation();
             bool bSpawnWeapon = Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.65f);
             bool bSpawnLoot = Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.95f);
+            bool bSpawnTrap = Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.02f);
 
             if (!FloorLootActor || !WeaponDef)
                 continue;
@@ -1812,6 +1812,8 @@ DWORD WINAPI SummonFloorLoot(LPVOID)
             {
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef, 1);
                 SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), WeaponDef->GetAmmoWorldItemDefinition_BP(), WeaponDef->GetAmmoWorldItemDefinition_BP()->DropCount);
+                if (bSpawnTrap)
+                    SpawnPickup(FVector(Location.X, Location.Y, Location.Z + 250), Utils::GetRandomTrap(), 1);
                 Sleep(50);
                 continue;
             }

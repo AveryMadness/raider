@@ -17,5 +17,6 @@ namespace Globals
     bool bLateGame;
     float MaxHealth;
     float MaxShield;
+    bool DebugRespawn;
 
 }

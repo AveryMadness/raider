@@ -71,11 +71,12 @@ namespace Hooks
                             if (ItemInstance && ItemInstance->GetItemDefinitionBP() == AmmoDef)
                             {
                                 ItemInstances.RemoveSingle(i);
+                                Inventory::Update(PlayerController, 0, true);
                             }
                         }
                     }
 
-                    Inventory::Update(PlayerController, 0, true);
+                    Inventory::Update(PlayerController, i, false);
                 }
             }
 
@@ -138,6 +139,7 @@ namespace Hooks
         auto PlayerController = (AFortPlayerControllerAthena*)Native::World::SpawnPlayActor(GetWorld(), NewPlayer, RemoteRole, URL, UniqueId, Error, NetPlayerIndex);
         NewPlayer->PlayerController = PlayerController;
 
+		
         auto PlayerState = (AFortPlayerStateAthena*)PlayerController->PlayerState;
 		
 		FTransform LocationToSpawn;
@@ -422,7 +424,7 @@ namespace Hooks
                 }
             }
 			
-			if (ReceivingActor && ReceivingActor->Class->GetName().contains("VendingMachine"))
+			/* if (ReceivingActor && ReceivingActor->Class->GetName().contains("VendingMachine"))
             {
               auto VendingMachine = (ABuildingItemCollectorActor*)ReceivingActor;
               auto Location = ReceivingActor->K2_GetActorLocation();
@@ -433,7 +435,7 @@ namespace Hooks
                   std::cout << "No input item" << std::endl;
               auto Pickup = SpawnPickup(VendingMachine->LootSpawnLocation, VendingMachine->ItemCollections[0].OutputItem);
               
-            }
+            } */
 
             if (ReceivingActor && ReceivingActor->Class->GetName().contains("Tiered_Chest"))
             {
@@ -480,12 +482,14 @@ namespace Hooks
                     std::cout << "Pickup Spawned and Valid!" << std::endl;
                 }
 
-               SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+              // SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
                 std::cout << "Spawned Consumable!" << std::endl;
-               SpawnPickup(Location, ((UFortWeaponItemDefinition*)WeaponDef)->GetAmmoWorldItemDefinition_BP(), 29);
+               SpawnPickup(Location, ((UFortWeaponItemDefinition*)WeaponDef)->GetAmmoWorldItemDefinition_BP(), WeaponDef->GetAmmoWorldItemDefinition_BP()->DropCount);
                 std::cout << "Spawned Ammo!" << std::endl;
                SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 std::cout << "Spawned Resource!" << std::endl;
+               if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.25))
+                   SpawnPickup(Location, Utils::GetRandomTrap(), 3);
             }
 
             if (ReceivingActor && ReceivingActor->Class->GetName().contains("AthenaSupplyDrop")) // AllyJ - WIP Supply Drop Loot
@@ -495,17 +499,120 @@ namespace Hooks
 
                 auto WeaponDef = Utils::GetRandomGoldWeaponDefinition();
                 auto Pickup = Hooks::SpawnPickup(Location, WeaponDef);
+                SpawnPickup(Location, Utils::GetRandomTrap(), 1);
                 
 				
 
-                SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
-                SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+              //  SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+              //  SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
                 SpawnPickup(Location, ((UFortWeaponItemDefinition*)WeaponDef)->GetAmmoWorldItemDefinition_BP());
                 SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 AthenaSupplyDrop->K2_DestroyActor();
                 
+            }
+        }
+
+        if (Function->GetFullName() == "Function FortniteGame.FortPlayerController.ClientReportDamagedResourceBuilding")
+        {
+            auto Controller = (AFortPlayerControllerAthena*)Object;
+            auto Params = (AFortPlayerController_ClientReportDamagedResourceBuilding_Params*)Parameters;
+            auto ResourceType = Params->PotentialResourceType.GetValue();
+            UFortResourceItemDefinition* WorldItemDefinition = nullptr;
+            static auto WoodDefinition = Utils::FindObjectFast<UFortResourceItemDefinition>(Utils::ResourcePool[0]);
+            static auto StoneDefinition = Utils::FindObjectFast<UFortResourceItemDefinition>(Utils::ResourcePool[1]);
+            static auto MetalDefinition = Utils::FindObjectFast<UFortResourceItemDefinition>(Utils::ResourcePool[2]);
+
+            switch (ResourceType)
+            {
+            case EFortResourceType::Wood:
+                WorldItemDefinition = WoodDefinition;
+                break;
+            case EFortResourceType::Stone:
+                WorldItemDefinition = StoneDefinition;
+                break;
+            case EFortResourceType::Metal:
+                WorldItemDefinition = MetalDefinition;
+                break;
+            }
+
+            bool bFound = false;
+
+            if (WorldItemDefinition)
+            {
+                for (int i = 0; i < Controller->WorldInventory->Inventory.ReplicatedEntries.Num(); i++)
+                {
+                    if (Controller->WorldInventory->Inventory.ReplicatedEntries[i].ItemDefinition == WorldItemDefinition)
+                    {
+                        bFound = true;
+                        Controller->WorldInventory->Inventory.ReplicatedEntries[i].Count += Params->PotentialResourceCount;
+                        Controller->WorldInventory->Inventory.ReplicatedEntries[i].ReplicationKey++;
+
+                        if (Controller->WorldInventory->Inventory.ReplicatedEntries[i].Count <= 0)
+                        {
+                            Controller->WorldInventory->Inventory.ReplicatedEntries.RemoveSingle(i);
+
+                            for (int j = 0; j < Controller->WorldInventory->Inventory.ItemInstances.Num(); j++)
+                            {
+                                auto ItemInstance = Controller->WorldInventory->Inventory.ItemInstances[j];
+
+                                if (ItemInstance && ItemInstance->GetItemDefinitionBP() == WorldItemDefinition)
+                                {
+                                    Controller->WorldInventory->Inventory.ItemInstances.RemoveSingle(i);
+                                    break;
+                                }
+                                else
+                                    continue;
+                            }
+                        }
+                        else if (Controller->WorldInventory->Inventory.ReplicatedEntries[i].Count > 999)
+                        {
+                            Hooks::SpawnPickup(Controller->Pawn->K2_GetActorLocation(), WorldItemDefinition, Controller->WorldInventory->Inventory.ReplicatedEntries[i].Count - 999);
+							Controller->WorldInventory->Inventory.ReplicatedEntries[i].Count = 999;
+                            Inventory::Update(Controller, 0, true);
+                        }
+
+                        Inventory::Update(Controller, 0, true);
+                        break;
+                    }
+                    else
+                        continue;
+                }
+
+                if (!bFound)
+                {
+                    for (int i = 0; i < Controller->QuickBars->SecondaryQuickBar.Slots.Num(); i++)
+                    {
+                        if (!Controller->QuickBars->SecondaryQuickBar.Slots[i].Items.Data) // Checks if the slot is empty
+                        {
+                            Inventory::AddItemToSlot(Controller, WorldItemDefinition, i, EFortQuickBars::Secondary, Params->PotentialResourceCount);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ToDo: Proper material gather amount and weak spot multiplier
+        if (Function->GetName() == "OnDamagePlayEffects" || Function->GetName() == "OnDeathPlayEffects")
+        {
+            if (!Object->IsA(AFortPlayerPawnAthena::StaticClass()))
+            {
+                auto Params = (ABuildingActor_OnDamagePlayEffects_Params*)Parameters;
+                if (Params->InstigatedBy)
+                {
+                    auto Controller = (AFortPlayerControllerAthena*)Params->InstigatedBy->Controller;
+                    // if (Controller->WeakspotUnderReticle.IsValid())
+                    // LOG_INFO("WeakSpot Valid");
+
+                    if (Controller && Params->DamageCauser->GetFullName().find("Melee") != -1)
+                    {
+                        auto Obj = (ABuildingSMActor*)Object;
+                        if (Obj->bPlayerPlaced != true)
+                            Controller->ClientReportDamagedResourceBuilding(Obj, Obj->ResourceType, GetMath()->STATIC_RandomFloatInRange(5, 11), Function->GetName() == "OnDeathPlayEffects" ? true : false, false);
+                    }
+                }
             }
         }
 
@@ -553,6 +660,7 @@ namespace Hooks
             HostBeacon = nullptr;
             ((AFortGameModeAthena*)GetWorld()->AuthorityGameMode)->bSafeZonePaused = false;
             DetachNetworkHooks();
+            ExistingBuildings.FreeArray();
             GetKismetSystem()->STATIC_ExecuteConsoleCommand(GetWorld(), L"open frontend", GetPlayerController());
         }
         
