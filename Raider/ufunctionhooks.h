@@ -802,7 +802,7 @@ namespace UFunctionHooks
                     return true;
             }
 
-            return false;
+            return true;
         })
 
         DEFINE_PEHOOK("Function Engine.GameMode.ReadyToStartMatch", {
