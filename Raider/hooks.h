@@ -34,6 +34,7 @@ namespace Hooks
         return 2; // ENetMode::NM_ListenServer;
     }
 
+    //credits to the sulfur team i suppose
     void* OnReloadHook(AFortWeapon* a1, int a2)
     {
         auto Pawn = (AFortPlayerPawnAthena*)a1->GetOwner();

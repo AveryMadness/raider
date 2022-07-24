@@ -1648,6 +1648,7 @@ DWORD WINAPI SetVendingMachines(LPVOID)
     return 0;
 }
 
+//credits to sulfur devs iirc
 static bool RemoveBuildingAmount(UClass* BuildingClass, AFortPlayerControllerAthena* TargetController)
 {
     auto Inventory = TargetController->WorldInventory;

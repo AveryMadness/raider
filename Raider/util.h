@@ -197,6 +197,8 @@ namespace Utils
         *ScalarCos = sign * p;
     }
 
+	//credit sulfur team for the base tables and loot selecting func
+
     std::vector<std::string> AthenaConsumables = {
         "/Game/Athena/Items/Consumables/Shields/Athena_Shields.Athena_Shields",
         "/Game/Athena/Items/Consumables/ShieldSmall/Athena_ShieldSmall.Athena_ShieldSmall",
@@ -468,7 +470,7 @@ namespace Utils
             return AthenaSniperLootPool;
         if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.07))
             return AthenaRocketLootPool;
-        return AthenaAssaultLootPool;
+        return CalculateLootType();
     }
 
     static UFortWeaponItemDefinition* GetRandomWeaponDefinition(std::vector<std::string> LootTable)
