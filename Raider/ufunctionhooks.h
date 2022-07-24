@@ -600,8 +600,11 @@ namespace UFunctionHooks
                         ItemEntry = AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaSmgLootPool), 3, EFortQuickBars::Primary, 1);
                         EquipWeaponDefinition(PC->Pawn, (UFortWeaponItemDefinition*)ItemEntry.ItemDefinition, ItemEntry.ItemGuid, -1, true);
                         AddItem(PC, Utils::GetRandomWeaponDefinition(Utils::AthenaSmgLootPool)->GetAmmoWorldItemDefinition_BP(), 0, EFortQuickBars::Secondary, 500);
-                        AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 4, EFortQuickBars::Primary, 5);
-                        AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 5, EFortQuickBars::Primary, 5);
+                        if (Globals::bSpawnConsumables)
+                        {
+                            AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 4, EFortQuickBars::Primary, 5);
+                            AddItem(PC, Utils::GetRandomConsumableItemDefinition(), 5, EFortQuickBars::Primary, 5);
+                        }
                     }
                     if (PlayersJumpedFromBus >= GameState->PlayerArray.Num() && bLateGame)
                     {

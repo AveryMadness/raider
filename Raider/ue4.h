@@ -687,10 +687,13 @@ static void InitInventory(AFortPlayerController* PlayerController)
         AddItem(PlayerController, Wood, 0, EFortQuickBars::Secondary, 999);
         AddItem(PlayerController, Stone, 0, EFortQuickBars::Secondary, 999);
         AddItem(PlayerController, Metal, 0, EFortQuickBars::Secondary, 999);
-        AddItem(PlayerController, Trap, 4, EFortQuickBars::Secondary, 1);
-        AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
-        AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
-        AddItem(PlayerController, Trap4, 7, EFortQuickBars::Secondary, 1);
+        if(Globals::bSpawnTraps)
+        {
+            AddItem(PlayerController, Trap, 4, EFortQuickBars::Secondary, 1);
+            AddItem(PlayerController, Trap2, 5, EFortQuickBars::Secondary, 1);
+            AddItem(PlayerController, Trap3, 6, EFortQuickBars::Secondary, 1);
+            AddItem(PlayerController, Trap4, 7, EFortQuickBars::Secondary, 1);
+        }
     }
 
 

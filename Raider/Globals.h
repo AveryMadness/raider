@@ -19,4 +19,8 @@ namespace Globals
     float MaxShield;
     bool DebugRespawn;
 
+	// EXPERMIMENTAL - THESE MAY BREAK INVENTORY, ETC
+    bool bSpawnConsumables = false;
+    bool bSpawnTraps = false;
+
 }

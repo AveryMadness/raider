@@ -481,14 +481,14 @@ namespace Hooks
                 {
                     std::cout << "Pickup Spawned and Valid!" << std::endl;
                 }
-
-              // SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+                if (Globals::bSpawnConsumables)
+              SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
                 std::cout << "Spawned Consumable!" << std::endl;
                SpawnPickup(Location, ((UFortWeaponItemDefinition*)WeaponDef)->GetAmmoWorldItemDefinition_BP(), WeaponDef->GetAmmoWorldItemDefinition_BP()->DropCount);
                 std::cout << "Spawned Ammo!" << std::endl;
                SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 std::cout << "Spawned Resource!" << std::endl;
-               if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.25))
+               if (Globals::MathLibrary->STATIC_RandomBoolWithWeight(0.25) && Globals::bSpawnTraps)
                    SpawnPickup(Location, Utils::GetRandomTrap(), 3);
             }
 
@@ -502,9 +502,11 @@ namespace Hooks
                 SpawnPickup(Location, Utils::GetRandomTrap(), 1);
                 
 				
-
-              //  SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
-              //  SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+                if (Globals::bSpawnConsumables)
+                {
+                    SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+                    SpawnPickup(Location, Utils::GetRandomConsumableItemDefinition());
+                }
                 SpawnPickup(Location, ((UFortWeaponItemDefinition*)WeaponDef)->GetAmmoWorldItemDefinition_BP());
                 SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
                 SpawnPickup(Location, Utils::GetRandomResourceItemDefinition(), 30);
