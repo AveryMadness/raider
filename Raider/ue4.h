@@ -814,6 +814,54 @@ static auto GrantGameplayAbility(APlayerPawn_Athena_C* TargetPawn, UClass* Gamep
 
 }
 
+static auto GrantGameplayAbilityAndActivateOnce(AFortPlayerPawnAthena* Player, UClass* GameplayAbilityClass, UObject* SourceObject = nullptr)
+{
+    auto AbilitySystemComponent = TargetPawn->AbilitySystemComponent;
+
+    if(!AbilitySystemComponent)
+        return;
+    
+    auto GenerateNewSpec = [&]() -> FGameplayAbilitySpec
+    {
+        FGameplayAbilitySpecHandle Handle{ rand() };
+
+        FGameplayAbilitySpec Spec{ -1, -1, -1, Handle, (UGameplayAbility*)GameplayAbilityClass->CreateDefaultObject(), 1, -1, SourceObject, 0, false, true, false
+        };
+
+        return Spec;
+    }
+
+    auto Spec = GenerateNewSpec();
+
+    auto Handle = Native::AbilitySystemComponent::GiveAbility(AbilitySystemComponent, &Spec.Handle, Spec);
+
+    UGameplayAbility* InstancedAbility = nullptr;
+    if(!Native::AbilitySystemComponent::InternalTryActivateAbility(AbilitySystemComponent, Spec.Handle, FPredictionKey(), &InstancedAbility, nullptr, nullptr))
+    {
+
+    }
+
+    return InstancedAbility;
+    
+}
+
+static void PlayEmote(AFortPlayerController* Player, void* Params)
+{
+    auto Parameters = (AFortPlayerController_ServerPlayEmoteItem_Params*)Params;
+    auto EmoteAsset = Parameters->EmoteAsset;
+    auto Pawn = (AFortPlayerPawnAthena*)((AFortPlayerControllerAthena*)Player)->Pawn;
+
+    if(EmoteAsset)
+    {
+        if(Pawn->AbilitySystemComponent)
+        {
+            GrantGameplayAbilityAndActivateOnce(Pawn, UGAB_Emote_Generic_C::StaticClass(), EmoteAsset);
+        }
+    }
+}
+
+
+
 static bool KickController(AFortPlayerControllerAthena* PC, FString Message)
 {
     FText text = reinterpret_cast<UKismetTextLibrary*>(UKismetTextLibrary::StaticClass())->STATIC_Conv_StringToText(Message);
