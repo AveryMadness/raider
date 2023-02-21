@@ -816,7 +816,7 @@ static auto GrantGameplayAbility(APlayerPawn_Athena_C* TargetPawn, UClass* Gamep
 
 static auto GrantGameplayAbilityAndActivateOnce(AFortPlayerPawnAthena* Player, UClass* GameplayAbilityClass, UObject* SourceObject = nullptr)
 {
-    auto AbilitySystemComponent = TargetPawn->AbilitySystemComponent;
+    auto AbilitySystemComponent = Player->AbilitySystemComponent;
 
     if(!AbilitySystemComponent)
         return;
