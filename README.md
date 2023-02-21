@@ -12,7 +12,6 @@ If ANYBODY who has authority to take this down would like me to, contact me at a
 Certain parts and pieces of code have been taken from other sources. If your code is included in this, and you wish to be credited, please let me know through the links above.
 
 ## - Current Importance
-- Emoting 
 - Primary Quickbar item stacking
 
 ## - The Raider Team
