@@ -829,7 +829,7 @@ static auto GrantGameplayAbilityAndActivateOnce(AFortPlayerPawnAthena* Player, U
         };
 
         return Spec;
-    }
+    };
 
     auto Spec = GenerateNewSpec();
 
